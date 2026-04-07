@@ -1,0 +1,24 @@
+/* ================================================================
+   TicketsPage.css
+   ================================================================ */
+
+.tickets-page { display: flex; flex-direction: column; gap: var(--spacing-5); }
+
+.tickets-stats {
+  display: flex;
+  gap: var(--spacing-4);
+}
+
+.ticket-stat-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-4) var(--spacing-6);
+  min-width: 100px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .tickets-stats { flex-wrap: wrap; }
+}

@@ -1,0 +1,29 @@
+# Git ignore patterns for Smart Campus Operations Hub
+
+# ---- Backend ----
+backend/target/
+backend/*.iml
+backend/.mvn/
+backend/.idea/
+*.class
+*.jar
+*.war
+
+# ---- Frontend ----
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.vite/
+
+# ---- IDE ----
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+.DS_Store
+
+# ---- Logs ----
+*.log

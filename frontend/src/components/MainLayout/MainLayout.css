@@ -1,0 +1,44 @@
+/* ================================================================
+   MainLayout.css
+   ================================================================ */
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.layout-main {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left var(--transition-slow);
+}
+
+.layout-content {
+  flex: 1;
+  padding: var(--spacing-6);
+  background: var(--content-bg);
+  animation: fadeIn 200ms ease;
+}
+
+.layout-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.4);
+  z-index: 99;
+}
+
+@media (max-width: 768px) {
+  .layout-main {
+    margin-left: 0;
+  }
+  .layout-overlay {
+    display: block;
+  }
+  .layout-content {
+    padding: var(--spacing-4);
+  }
+}

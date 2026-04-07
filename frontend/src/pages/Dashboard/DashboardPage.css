@@ -1,0 +1,63 @@
+/* ================================================================
+   DashboardPage.css
+   ================================================================ */
+
+.dashboard-page { display: flex; flex-direction: column; gap: var(--spacing-6); }
+
+/* Welcome Banner */
+.dashboard-welcome {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-6) var(--spacing-8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+  box-shadow: 0 8px 25px rgb(79 70 229 / 0.3);
+}
+
+.dashboard-welcome-text h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin-bottom: var(--spacing-2);
+}
+
+.dashboard-welcome-text p {
+  opacity: 0.85;
+  font-size: var(--font-size-base);
+}
+
+.dashboard-welcome-actions .btn-primary {
+  background: rgba(255 255 255 / 0.2);
+  border: 1px solid rgba(255 255 255 / 0.3);
+  backdrop-filter: blur(4px);
+}
+
+.dashboard-welcome-actions .btn-primary:hover {
+  background: rgba(255 255 255 / 0.3);
+}
+
+/* Modules Grid */
+.dashboard-modules {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-6);
+}
+
+.dashboard-module-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-4);
+}
+
+.dashboard-module-header h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+@media (max-width: 768px) {
+  .dashboard-welcome { flex-direction: column; gap: var(--spacing-4); text-align: center; }
+  .dashboard-modules { grid-template-columns: 1fr; }
+}
