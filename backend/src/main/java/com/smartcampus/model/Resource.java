@@ -1,67 +1,58 @@
 package com.smartcampus.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 
 /**
  * ================================================================
  * Resource Document (Campus Facilities & Resources) - MongoDB
  * ================================================================
- * Owner: Member 3 - Facilities & Resources Module
- *
- * TODO Member 3:
- *  - Add capacity field
- *  - Add location/building details
- *  - Add resource type enum (ROOM, LAB, EQUIPMENT, etc.)
- *  - Add availability schedule logic
- *  - Add image URL field for resource photos
+ * Represents a bookable campus resource: rooms, labs, equipment, etc.
  * ================================================================
  */
 @Document(collection = "resources")
-@Data
-@Builder
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Resource {
 
     @Id
-    private String id; // MongoDB ObjectId stored as String
+    private String id;
 
-    @NotBlank
     private String name;
 
     private String description;
 
-    // TODO: Member 3 - Replace with ResourceType enum
-    private String type; // e.g., "ROOM", "LAB", "EQUIPMENT"
+    @Indexed
+    private String type;
 
-    private String location; // e.g., "Building A, Floor 2"
+    private String location;
 
     private Integer capacity;
 
-    @lombok.Builder.Default
-    private Boolean isAvailable = true;
+    private Boolean isAvailable;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // --- Relationships (referenced by ID in BookingRepository / TicketRepository) ---
-    // TODO: Member 2 - Query bookings by resourceId in BookingRepository
-    // TODO: Member 4 - Query tickets by resourceId in TicketRepository
-
     public void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        if (this.isAvailable == null) this.isAvailable = true;
     }
 
     public void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 }

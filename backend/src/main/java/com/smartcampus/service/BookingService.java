@@ -6,34 +6,44 @@ import java.util.List;
 
 /**
  * ================================================================
- * BookingService Interface
+ * BookingService — Booking Management Interface
  * ================================================================
- * Owner: Member 2 - Booking Management Module
- *
- * TODO Member 2:
- *  - Implement createBooking with overlap detection
- *  - Implement cancelBooking with status transition
- *  - Implement admin approval flow (approveBooking)
- *  - Add sendConfirmationNotification on booking confirm
+ * Workflow rules enforced by the implementation:
+ *  - createBooking  → status starts as PENDING; no conflict check yet
+ *  - approveBooking → PENDING → APPROVED; conflict check runs HERE
+ *  - rejectBooking  → PENDING → REJECTED
+ *  - cancelBooking  → APPROVED → CANCELLED (users can cancel own bookings;
+ *                                           admins can cancel any)
+ *  - getAllBookings  → ADMIN only
+ *  - getUserBookings → returns only the calling user's bookings
  * ================================================================
  */
 public interface BookingService {
 
-    List<BookingDTO.BookingResponse> getAllBookings();
-
-    BookingDTO.BookingResponse getBookingById(String id);
-
-    List<BookingDTO.BookingResponse> getBookingsByUser(String userId);
-
-    List<BookingDTO.BookingResponse> getBookingsByResource(String resourceId);
-
+    /** Create a new booking (any authenticated user). Status: PENDING */
     BookingDTO.BookingResponse createBooking(String userId, BookingDTO.BookingRequest request);
 
-    BookingDTO.BookingResponse updateBookingStatus(String id, String status);
+    /**
+     * Approve a PENDING booking (ADMIN only).
+     * Runs conflict detection — throws BookingException if slot is taken.
+     */
+    BookingDTO.BookingResponse approveBooking(String bookingId, String adminNote, String adminRole);
 
-    void cancelBooking(String id);
+    /** Reject a PENDING booking (ADMIN only) */
+    BookingDTO.BookingResponse rejectBooking(String bookingId, String adminNote, String adminRole);
 
-    // TODO: Member 2 - Add admin approve/reject
-    // BookingDTO.BookingResponse approveBooking(String id);
-    // BookingDTO.BookingResponse rejectBooking(String id, String reason);
+    /**
+     * Cancel a booking (user can cancel own PENDING/APPROVED bookings;
+     * admin can cancel any APPROVED booking).
+     */
+    BookingDTO.BookingResponse cancelBooking(String bookingId, String requestingUserId, String requestingRole);
+
+    /** Get all bookings — ADMIN only */
+    List<BookingDTO.BookingResponse> getAllBookings();
+
+    /** Get bookings for the currently authenticated user */
+    List<BookingDTO.BookingResponse> getUserBookings(String userId);
+
+    /** Get a single booking by ID */
+    BookingDTO.BookingResponse getBookingById(String bookingId);
 }

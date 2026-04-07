@@ -41,10 +41,9 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.getEmail()));
 
         // Step 2: Validate password
-        // TODO: Member 1 - Uncomment after PasswordEncoder is configured
-        // if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-        //     throw new BadRequestException("Invalid credentials");
-        // }
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new BadRequestException("Invalid email or password.");
+        }
 
         // Step 3: Generate JWT token
         // TODO: Member 1 - Implement JwtUtils.generateToken()

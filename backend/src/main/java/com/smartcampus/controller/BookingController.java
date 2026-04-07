@@ -6,28 +6,76 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import com.smartcampus.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
 /**
  * ================================================================
- * BookingController - Booking Management Endpoints
+ * BookingController — Booking Management REST Endpoints
  * ================================================================
- * Owner: Member 2 - Booking Management Module
  * Base URL: /api/bookings
  *
- * TODO Member 2:
- *  - GET    /api/bookings                  → All bookings (ADMIN)
- *  - GET    /api/bookings/{id}             → Get single booking
- *  - GET    /api/bookings/user/{userId}    → Bookings by user
- *  - GET    /api/bookings/resource/{resId} → Bookings by resource
- *  - POST   /api/bookings                  → Create new booking
- *  - PATCH  /api/bookings/{id}/status      → Update status (ADMIN)
- *  - DELETE /api/bookings/{id}             → Cancel booking
- *  - GET    /api/bookings/check-availability → Check time slot availability
+ * Endpoint Overview:
+ *  POST   /api/bookings              → Create booking (any auth user)
+ *  GET    /api/bookings              → Get ALL bookings (ADMIN only)
+ *  GET    /api/bookings/my           → Get own bookings (any auth user)
+ *  GET    /api/bookings/{id}         → Get single booking
+ *  PUT    /api/bookings/{id}/approve → Approve PENDING booking (ADMIN)
+ *  PUT    /api/bookings/{id}/reject  → Reject PENDING booking (ADMIN)
+ *  PUT    /api/bookings/{id}/cancel  → Cancel booking (owner or ADMIN)
+ *
+ * How userId and role are extracted:
+ *  The JWT filter (JwtAuthFilter) validates the token on every request
+ *  and populates the Spring SecurityContext with a UserDetails object
+ *  (email as principal, ROLE_XXX as authority).
+ *  We use a helper method to resolve the User entity from that email.
+ *
+ * ─── Postman Test Collection (JSON) ─────────────────────────────
+ *
+ * 1. Register (POST /api/auth/register)
+ *    Body: {"name":"Alice","email":"alice@campus.com","password":"pass123"}
+ *    → save the returned "token" and "userId"
+ *
+ * 2. Create Resource (POST /api/resources)
+ *    Header: Authorization: Bearer <token>
+ *    Body: {"name":"Lab 101","description":"PC Lab","type":"LAB",
+ *           "location":"Block A","capacity":30,"isAvailable":true}
+ *    → save the returned "id" as resourceId
+ *
+ * 3. Create Booking (POST /api/bookings)
+ *    Header: Authorization: Bearer <token>
+ *    Body: {"resourceId":"<resourceId>","startTime":"2026-05-01T09:00:00",
+ *           "endTime":"2026-05-01T11:00:00","purpose":"Team meeting","attendeeCount":5}
+ *    → status will be PENDING; save returned "id" as bookingId
+ *
+ * 4. Register Admin (POST /api/auth/register)
+ *    Body: {"name":"Admin","email":"admin@campus.com","password":"admin123","role":"ADMIN"}
+ *    → save admin token
+ *
+ * 5. Approve Booking (PUT /api/bookings/<bookingId>/approve)
+ *    Header: Authorization: Bearer <adminToken>
+ *    Body: {"note":"Approved for team use"}
+ *    → status changes to APPROVED
+ *
+ * 6. Reject another Booking (PUT /api/bookings/<bookingId>/reject)
+ *    Header: Authorization: Bearer <adminToken>
+ *    Body: {"note":"Resource not available on this date"}
+ *
+ * 7. Test Conflict: Create a second overlapping booking then try to approve it
+ *    → should receive HTTP 409 BOOKING_CONFLICT
+ *
+ * 8. Cancel Booking (PUT /api/bookings/<bookingId>/cancel)
+ *    Header: Authorization: Bearer <userToken>   (owner can cancel own)
  * ================================================================
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
@@ -35,57 +83,120 @@ import java.util.List;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final UserRepository userRepository;
 
-    /** GET /api/bookings - Get all bookings (Admin only) */
+    // ─── POST /api/bookings ─────────────────────────────────────
+    /**
+     * Create a new booking request.
+     * Authenticated user's ID is resolved from the JWT token.
+     * Booking starts as PENDING until an admin approves it.
+     */
+    @PostMapping
+    public ResponseEntity<BookingDTO.BookingResponse> createBooking(
+            @Valid @RequestBody BookingDTO.BookingRequest request) {
+
+        String userId = resolveUserId();
+        BookingDTO.BookingResponse response = bookingService.createBooking(userId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    // ─── GET /api/bookings ──────────────────────────────────────
+    /**
+     * Get ALL bookings — admin use only.
+     * Non-admin users should call /api/bookings/my instead.
+     */
     @GetMapping
-    // TODO: Member 2 - Add @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<BookingDTO.BookingResponse>> getAllBookings() {
+        // Additional role check beyond JWT — returns 403 if not ADMIN
+        assertAdmin();
         return ResponseEntity.ok(bookingService.getAllBookings());
     }
 
-    /** GET /api/bookings/{id} - Get booking by ID */
+    // ─── GET /api/bookings/my ───────────────────────────────────
+    /** Get bookings belonging to the currently authenticated user */
+    @GetMapping("/my")
+    public ResponseEntity<List<BookingDTO.BookingResponse>> getMyBookings() {
+        String userId = resolveUserId();
+        return ResponseEntity.ok(bookingService.getUserBookings(userId));
+    }
+
+    // ─── GET /api/bookings/{id} ─────────────────────────────────
+    /** Get a single booking by ID */
     @GetMapping("/{id}")
     public ResponseEntity<BookingDTO.BookingResponse> getBookingById(@PathVariable String id) {
         return ResponseEntity.ok(bookingService.getBookingById(id));
     }
 
-    /** GET /api/bookings/user/{userId} - Get bookings for a specific user */
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<BookingDTO.BookingResponse>> getBookingsByUser(@PathVariable String userId) {
-        // TODO: Member 2 - Ensure user can only see their own bookings unless ADMIN
-        return ResponseEntity.ok(bookingService.getBookingsByUser(userId));
+    // ─── PUT /api/bookings/{id}/approve ─────────────────────────
+    /**
+     * Approve a PENDING booking.
+     * Runs conflict detection — returns 409 if slot is already taken.
+     * ADMIN only.
+     */
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<BookingDTO.BookingResponse> approveBooking(
+            @PathVariable String id,
+            @RequestBody(required = false) BookingDTO.AdminActionRequest body) {
+
+        String role = resolveRole();
+        String note = body != null ? body.getNote() : null;
+        return ResponseEntity.ok(bookingService.approveBooking(id, note, role));
     }
 
-    /** GET /api/bookings/resource/{resourceId} - Get bookings for a resource */
-    @GetMapping("/resource/{resourceId}")
-    public ResponseEntity<List<BookingDTO.BookingResponse>> getBookingsByResource(@PathVariable String resourceId) {
-        return ResponseEntity.ok(bookingService.getBookingsByResource(resourceId));
+    // ─── PUT /api/bookings/{id}/reject ──────────────────────────
+    /** Reject a PENDING booking. ADMIN only. */
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<BookingDTO.BookingResponse> rejectBooking(
+            @PathVariable String id,
+            @RequestBody(required = false) BookingDTO.AdminActionRequest body) {
+
+        String role = resolveRole();
+        String note = body != null ? body.getNote() : null;
+        return ResponseEntity.ok(bookingService.rejectBooking(id, note, role));
+    }
+
+    // ─── PUT /api/bookings/{id}/cancel ──────────────────────────
+    /** Cancel a booking. Owners can cancel their own; admins can cancel any. */
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<BookingDTO.BookingResponse> cancelBooking(@PathVariable String id) {
+        String userId = resolveUserId();
+        String role = resolveRole();
+        return ResponseEntity.ok(bookingService.cancelBooking(id, userId, role));
+    }
+
+    // ─── Security Helpers ───────────────────────────────────────
+
+    /**
+     * Extracts the email from the JWT-populated SecurityContext,
+     * then looks up the User document to get the MongoDB ObjectId.
+     */
+    private String resolveUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName(); // email is used as the JWT subject
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new com.smartcampus.exception.ResourceNotFoundException(
+                        "Authenticated user not found: " + email))
+                .getId();
     }
 
     /**
-     * POST /api/bookings - Create a new booking
-     * TODO: Member 2 - Extract userId from JWT token instead of request param
+     * Extracts the role string (without "ROLE_" prefix) from the SecurityContext.
+     * e.g., GrantedAuthority "ROLE_ADMIN" → returns "ADMIN"
      */
-    @PostMapping
-    public ResponseEntity<BookingDTO.BookingResponse> createBooking(
-            @RequestParam String userId, // TODO: Member 2 → Replace with @AuthenticationPrincipal
-            @Valid @RequestBody BookingDTO.BookingRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.createBooking(userId, request));
+    private String resolveRole() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(a -> a.startsWith("ROLE_"))
+                .map(a -> a.replace("ROLE_", ""))
+                .findFirst()
+                .orElse("STUDENT");
     }
 
-    /** PATCH /api/bookings/{id}/status - Update booking status */
-    @PatchMapping("/{id}/status")
-    // TODO: Member 2 - Add @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BookingDTO.BookingResponse> updateBookingStatus(
-            @PathVariable String id,
-            @RequestParam String status) {
-        return ResponseEntity.ok(bookingService.updateBookingStatus(id, status));
-    }
-
-    /** DELETE /api/bookings/{id} - Cancel a booking */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelBooking(@PathVariable String id) {
-        bookingService.cancelBooking(id);
-        return ResponseEntity.noContent().build();
+    /** Throws 403 if the current user is not ADMIN */
+    private void assertAdmin() {
+        if (!"ADMIN".equalsIgnoreCase(resolveRole())) {
+            throw com.smartcampus.exception.BookingException.unauthorized("view all bookings");
+        }
     }
 }

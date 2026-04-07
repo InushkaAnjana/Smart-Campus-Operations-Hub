@@ -1,8 +1,6 @@
 package com.smartcampus.dto;
 
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,25 +10,19 @@ import java.time.LocalDateTime;
 
 /**
  * ================================================================
- * Booking DTOs - Booking Management Module
- * ================================================================
- * Owner: Member 2 - Booking Management
- *
- * TODO Member 2:
- *  - Add validation for startTime < endTime
- *  - Add conflict check response structure
- *  - Add BookingStatus enum reference
+ * BookingDTO — Request and Response DTOs for Booking Module
  * ================================================================
  */
 public class BookingDTO {
 
-    // ---- Create Booking Request ----
+    // ─── Request ───────────────────────────────────────────────
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class BookingRequest {
+
         @NotBlank(message = "Resource ID is required")
-        private String resourceId; // MongoDB ObjectId as String
+        private String resourceId;
 
         @NotNull(message = "Start time is required")
         @Future(message = "Start time must be in the future")
@@ -39,30 +31,45 @@ public class BookingDTO {
         @NotNull(message = "End time is required")
         private LocalDateTime endTime;
 
+        @NotBlank(message = "Purpose is required")
         private String purpose;
+
+        @Min(value = 1, message = "Attendee count must be at least 1")
         private Integer attendeeCount;
     }
 
-    // ---- Booking Response ----
+    // ─── Admin Action Request (approve / reject) ────────────────
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AdminActionRequest {
+        private String note; // Optional: reason for rejection or approval note
+    }
+
+    // ─── Response ──────────────────────────────────────────────
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class BookingResponse {
-        private String id;       // MongoDB ObjectId as String
-        private String status;
+        private String id;
+        private String status;         // String so frontend gets human-readable value
+        private String purpose;
+        private int attendeeCount;
         private LocalDateTime startTime;
         private LocalDateTime endTime;
-        private String purpose;
-        private Integer attendeeCount;
+        private String adminNote;
         private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+        private LocalDateTime approvedAt;
+        private LocalDateTime rejectedAt;
+        private LocalDateTime cancelledAt;
 
-        // Nested summary objects
+        // Nested summaries — populated by service via ID lookups
         private UserSummary user;
         private ResourceSummary resource;
     }
 
-    // ---- Nested: User summary inside BookingResponse ----
     @Data
     @AllArgsConstructor
     public static class UserSummary {
@@ -71,12 +78,12 @@ public class BookingDTO {
         private String email;
     }
 
-    // ---- Nested: Resource summary inside BookingResponse ----
     @Data
     @AllArgsConstructor
     public static class ResourceSummary {
         private String id;
         private String name;
         private String location;
+        private String type;
     }
 }

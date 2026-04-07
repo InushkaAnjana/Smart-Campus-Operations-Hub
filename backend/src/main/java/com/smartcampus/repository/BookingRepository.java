@@ -1,6 +1,7 @@
 package com.smartcampus.repository;
 
 import com.smartcampus.model.Booking;
+import com.smartcampus.model.BookingStatus;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -10,36 +11,46 @@ import java.util.List;
 
 /**
  * ================================================================
- * BookingRepository (MongoDB)
+ * BookingRepository
  * ================================================================
- * Owner: Member 2 - Booking Management Module
+ * Custom queries:
+ *  - findOverlappingApprovedBookings: Core conflict-detection query.
+ *    Returns APPROVED bookings for a resource whose time window overlaps
+ *    with [newStart, newEnd].
  *
- * TODO Member 2:
- *  - Implement the overlapping bookings query
- *  - Add findByStatus() for admin filtering
- *  - Add findByUserIdAndStatus() for user's booking history
- *  - Add date range queries for calendar view
+ *    Overlap condition (Allen's interval algebra):
+ *      existingStart < newEnd  AND  existingEnd > newStart
+ *
+ *    An optional excludeId is used when checking conflicts for an edit
+ *    so the booking being edited doesn't conflict with itself.
  * ================================================================
  */
 @Repository
 public interface BookingRepository extends MongoRepository<Booking, String> {
 
+    /** All bookings for a specific user */
     List<Booking> findByUserId(String userId);
 
+    /** All bookings for a specific resource */
     List<Booking> findByResourceId(String resourceId);
 
-    List<Booking> findByStatus(String status);
+    /** All bookings with a given status */
+    List<Booking> findByStatus(BookingStatus status);
 
-    List<Booking> findByUserIdAndStatus(String userId, String status);
+    /** All bookings for a user with a given status */
+    List<Booking> findByUserIdAndStatus(String userId, BookingStatus status);
 
     /**
-     * TODO: Member 2 - Implement this to detect conflicting bookings
-     * Finds bookings for a resource that overlap with the given time range (excluding CANCELLED).
+     * Conflict detection: Find APPROVED bookings for a resource that
+     * overlap with the given [startTime, endTime] window.
+     *
+     * MongoDB query logic:
+     *   - status = APPROVED              (only confirmed slots are blocked)
+     *   - resourceId matches             (same resource)
+     *   - startTime < newEnd             (existing booking starts before new one ends)
+     *   - endTime > newStart             (existing booking ends after new one starts)
+     *   - id != excludeId                (skip self when editing — pass "NONE" if not editing)
      */
-    @Query("{ 'resourceId': ?0, 'status': { $ne: 'CANCELLED' }, 'startTime': { $lt: ?2 }, 'endTime': { $gt: ?1 } }")
-    List<Booking> findOverlappingBookings(String resourceId, LocalDateTime startTime, LocalDateTime endTime);
-
-    // TODO: Member 2 - Add upcoming bookings query for user dashboard
-    // @Query("{ 'userId': ?0, 'startTime': { $gt: ?1 } }")
-    // List<Booking> findUpcomingBookingsByUser(String userId, LocalDateTime now);
+    @Query("{ 'resourceId': ?0, 'status': 'APPROVED', 'startTime': { $lt: ?2 }, 'endTime': { $gt: ?1 }, '_id': { $ne: ?3 } }")
+    List<Booking> findOverlappingApprovedBookings(String resourceId, LocalDateTime newStart, LocalDateTime newEnd, String excludeId);
 }

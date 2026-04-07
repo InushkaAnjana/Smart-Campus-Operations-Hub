@@ -1,63 +1,73 @@
 package com.smartcampus.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 /**
  * ================================================================
- * Booking Document (MongoDB)
+ * Booking - MongoDB Document
  * ================================================================
- * Owner: Member 2 - Booking Management Module
+ * Lifecycle: PENDING → APPROVED / REJECTED → CANCELLED / COMPLETED
  *
- * TODO Member 2:
- *  - Add booking validation (no overlapping slots)
- *  - Add status enum: PENDING, CONFIRMED, CANCELLED, COMPLETED
- *  - Add recurring booking support
- *  - Wire up notification triggers on status change
- *  - Add approval workflow (admin must approve bookings)
+ * Compound index on [resourceId, status, startTime, endTime] enables
+ * fast conflict queries without a full collection scan.
  * ================================================================
  */
 @Document(collection = "bookings")
-@Data
-@Builder
+@CompoundIndex(name = "resource_time_idx", def = "{'resourceId': 1, 'status': 1, 'startTime': 1, 'endTime': 1}")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Booking {
 
     @Id
-    private String id; // MongoDB ObjectId stored as String
+    private String id;
 
-    // TODO: Member 2 - Replace String status with BookingStatus enum
-    @lombok.Builder.Default
-    private String status = "PENDING"; // PENDING | CONFIRMED | CANCELLED | COMPLETED
+    @Indexed
+    private String userId;
 
-    private LocalDateTime startTime;
+    @Indexed
+    private String resourceId;
 
-    private LocalDateTime endTime;
+    private BookingStatus status;
 
     private String purpose;
 
     private Integer attendeeCount;
 
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
+
+    private String adminNote;
+
+    private LocalDateTime cancelledAt;
+
+    private LocalDateTime approvedAt;
+
+    private LocalDateTime rejectedAt;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // --- Relationships (stored as IDs in MongoDB) ---
-    private String userId;     // ID of the user who made the booking
-    private String resourceId; // ID of the resource being booked
-
     public void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 }
