@@ -30,4 +30,14 @@ public class ErrorResponse {
         this.path = path;
         this.timestamp = LocalDateTime.now();
     }
+
+    // Constructor with validation errors
+    public ErrorResponse(int status, String error, String message, String path, List<String> validationErrors) {
+        this.status = status;
+        this.error = error;
+        this.message = message;
+        this.path = path;
+        this.timestamp = LocalDateTime.now();
+        this.validationErrors = validationErrors;
+    }
 }

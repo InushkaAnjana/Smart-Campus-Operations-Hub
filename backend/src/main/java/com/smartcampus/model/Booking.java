@@ -1,63 +1,103 @@
 package com.smartcampus.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 /**
  * ================================================================
- * Booking Document (MongoDB)
+ * Booking — MongoDB Document
  * ================================================================
- * Owner: Member 2 - Booking Management Module
+ * Lifecycle: PENDING → APPROVED / REJECTED → CANCELLED / COMPLETED
+ *            Any state → DELETED  (soft delete — admin only)
  *
- * TODO Member 2:
- *  - Add booking validation (no overlapping slots)
- *  - Add status enum: PENDING, CONFIRMED, CANCELLED, COMPLETED
- *  - Add recurring booking support
- *  - Wire up notification triggers on status change
- *  - Add approval workflow (admin must approve bookings)
+ * COMPOUND INDEX on [resourceId, status, startTime, endTime]:
+ *   Enables fast conflict detection without full collection scan.
+ *   The BookingRepository.findOverlappingApprovedBookings query uses
+ *   all four indexed fields in its filter, making it O(logN) instead of O(N).
+ *
+ * SOFT DELETE (deletedAt + status = DELETED):
+ *   Instead of removing documents, we mark them DELETED and record
+ *   the deletion timestamp. Benefits:
+ *     - Full audit trail: who booked what, when it was deleted
+ *     - Recoverable: admin can un-delete if needed
+ *     - Safe for billing/dispute investigations
  * ================================================================
  */
 @Document(collection = "bookings")
-@Data
-@Builder
+@CompoundIndex(name = "resource_time_idx",
+        def = "{'resourceId': 1, 'status': 1, 'startTime': 1, 'endTime': 1}")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Booking {
 
     @Id
-    private String id; // MongoDB ObjectId stored as String
+    private String id;
 
-    // TODO: Member 2 - Replace String status with BookingStatus enum
-    @lombok.Builder.Default
-    private String status = "PENDING"; // PENDING | CONFIRMED | CANCELLED | COMPLETED
+    /** The ID of the user who created this booking */
+    @Indexed
+    private String userId;
 
-    private LocalDateTime startTime;
+    /** The ID of the resource being booked */
+    @Indexed
+    private String resourceId;
 
-    private LocalDateTime endTime;
+    /** Current lifecycle status (see BookingStatus enum) */
+    private BookingStatus status;
 
+    /** Why the resource is needed (e.g., "Team standup meeting") */
     private String purpose;
 
+    /** Expected number of attendees — must be ≥ 1 */
     private Integer attendeeCount;
 
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+
+    /**
+     * General admin note (used for approval notes).
+     * For rejections, also set rejectionReason for clarity.
+     */
+    private String adminNote;
+
+    /**
+     * Explicit rejection reason — set when status transitions to REJECTED.
+     * Displayed separately from adminNote so the UI can show it prominently.
+     */
+    private String rejectionReason;
+
+    // ─── Lifecycle Timestamps ──────────────────────────────────
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime approvedAt;
+    private LocalDateTime rejectedAt;
+    private LocalDateTime cancelledAt;
 
-    // --- Relationships (stored as IDs in MongoDB) ---
-    private String userId;     // ID of the user who made the booking
-    private String resourceId; // ID of the resource being booked
+    /**
+     * Populated when a soft delete is performed (status = DELETED).
+     * Null for all non-deleted bookings.
+     */
+    private LocalDateTime deletedAt;
 
+    /** Call on first save — initialises createdAt and updatedAt */
     public void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
+    /** Call on every subsequent save — keeps updatedAt current */
     public void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 }

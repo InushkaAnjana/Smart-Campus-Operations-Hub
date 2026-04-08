@@ -1,0 +1,105 @@
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.fusesource.jansi.internal.JansiLoader in an unnamed module (file:/C:/Users/WW/.m2/wrapper/dists/apache-maven-3.9.6/0f95e7798d182e3371f3fee6d8202d3a56e6d71dfd3a2402139882ef2fbe7476/lib/jansi-2.4.0.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/C:/Users/WW/.m2/wrapper/dists/apache-maven-3.9.6/0f95e7798d182e3371f3fee6d8202d3a56e6d71dfd3a2402139882ef2fbe7476/lib/guava-32.0.1-jre.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< com.smartcampus:smart-campus-hub >------------------
+[INFO] Building Smart Campus Operations Hub 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.2.4:run (default-cli) > test-compile @ smart-campus-hub >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ smart-campus-hub ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ smart-campus-hub ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ smart-campus-hub ---
+[INFO] skip non existing resourceDirectory C:\Users\WW\Desktop\PAF-Project\Smart-Campus-Operations-Hub\backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ smart-campus-hub ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] <<< spring-boot:3.2.4:run (default-cli) < test-compile @ smart-campus-hub <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.2.4:run (default-cli) @ smart-campus-hub ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2026-04-08T10:02:34.793+05:30  INFO 4252 --- [smart-campus-hub] [           main] com.smartcampus.SmartCampusApplication   : Starting SmartCampusApplication using Java 24.0.1 with PID 4252 (C:\Users\WW\Desktop\PAF-Project\Smart-Campus-Operations-Hub\backend\target\classes started by WW in C:\Users\WW\Desktop\PAF-Project\Smart-Campus-Operations-Hub\backend)
+2026-04-08T10:02:34.795+05:30 DEBUG 4252 --- [smart-campus-hub] [           main] com.smartcampus.SmartCampusApplication   : Running with Spring Boot v3.2.4, Spring v6.1.5
+2026-04-08T10:02:34.795+05:30  INFO 4252 --- [smart-campus-hub] [           main] com.smartcampus.SmartCampusApplication   : No active profile set, falling back to 1 default profile: "default"
+2026-04-08T10:02:35.270+05:30  INFO 4252 --- [smart-campus-hub] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data MongoDB repositories in DEFAULT mode.
+2026-04-08T10:02:35.328+05:30  INFO 4252 --- [smart-campus-hub] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 56 ms. Found 5 MongoDB repository interfaces.
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.apache.tomcat.jni.Library in an unnamed module (file:/C:/Users/WW/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/10.1.19/tomcat-embed-core-10.1.19.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+2026-04-08T10:02:35.725+05:30  INFO 4252 --- [smart-campus-hub] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8081 (http)
+2026-04-08T10:02:35.734+05:30  INFO 4252 --- [smart-campus-hub] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-08T10:02:35.734+05:30  INFO 4252 --- [smart-campus-hub] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-04-08T10:02:35.771+05:30  INFO 4252 --- [smart-campus-hub] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-04-08T10:02:35.771+05:30  INFO 4252 --- [smart-campus-hub] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 939 ms
+2026-04-08T10:02:35.956+05:30  INFO 4252 --- [smart-campus-hub] [           main] org.mongodb.driver.client                : MongoClient with metadata {"application": {"name": "Cluster0"}, "driver": {"name": "mongo-java-driver|sync|spring-boot", "version": "4.11.1"}, "os": {"type": "Windows", "name": "Windows 11", "architecture": "amd64", "version": "10.0"}, "platform": "Java/Oracle Corporation/24.0.1+9-30"} created with settings MongoClientSettings{readPreference=primary, writeConcern=WriteConcern{w=majority, wTimeout=null ms, journal=null}, retryWrites=true, retryReads=true, readConcern=ReadConcern{level=null}, credential=MongoCredential{mechanism=null, userName='Inushka', source='admin', password=<hidden>, mechanismProperties=<hidden>}, transportSettings=null, streamFactoryFactory=null, commandListeners=[], codecRegistry=ProvidersCodecRegistry{codecProviders=[ValueCodecProvider{}, BsonValueCodecProvider{}, DBRefCodecProvider{}, DBObjectCodecProvider{}, DocumentCodecProvider{}, CollectionCodecProvider{}, IterableCodecProvider{}, MapCodecProvider{}, GeoJsonCodecProvider{}, GridFSFileCodecProvider{}, Jsr310CodecProvider{}, JsonObjectCodecProvider{}, BsonCodecProvider{}, EnumCodecProvider{}, com.mongodb.client.model.mql.ExpressionCodecProvider@3d0cac1f, com.mongodb.Jep395RecordCodecProvider@3e8b3b79, com.mongodb.KotlinCodecProvider@d257579]}, loggerSettings=LoggerSettings{maxDocumentLength=1000}, clusterSettings={hosts=[127.0.0.1:27017], srvHost=cluster0.d6fxrlw.mongodb.net, srvServiceName=mongodb, mode=MULTIPLE, requiredClusterType=REPLICA_SET, requiredReplicaSetName='atlas-mvr0l2-shard-0', serverSelector='null', clusterListeners='[]', serverSelectionTimeout='30000 ms', localThreshold='15 ms'}, socketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=0, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, heartbeatSocketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=10000, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, connectionPoolSettings=ConnectionPoolSettings{maxSize=100, minSize=0, maxWaitTimeMS=120000, maxConnectionLifeTimeMS=0, maxConnectionIdleTimeMS=0, maintenanceInitialDelayMS=0, maintenanceFrequencyMS=60000, connectionPoolListeners=[], maxConnecting=2}, serverSettings=ServerSettings{heartbeatFrequencyMS=10000, minHeartbeatFrequencyMS=500, serverListeners='[]', serverMonitorListeners='[]'}, sslSettings=SslSettings{enabled=true, invalidHostNameAllowed=false, context=null}, applicationName='Cluster0', compressorList=[], uuidRepresentation=JAVA_LEGACY, serverApi=null, autoEncryptionSettings=null, dnsClient=null, inetAddressResolver=null, contextProvider=null}
+2026-04-08T10:02:36.004+05:30  INFO 4252 --- [smart-campus-hub] [rlw.mongodb.net] org.mongodb.driver.cluster               : Adding discovered server ac-agauv1x-shard-00-01.d6fxrlw.mongodb.net:27017 to client view of cluster
+2026-04-08T10:02:36.026+05:30  INFO 4252 --- [smart-campus-hub] [rlw.mongodb.net] org.mongodb.driver.cluster               : Adding discovered server ac-agauv1x-shard-00-00.d6fxrlw.mongodb.net:27017 to client view of cluster
+2026-04-08T10:02:36.028+05:30  INFO 4252 --- [smart-campus-hub] [rlw.mongodb.net] org.mongodb.driver.cluster               : Adding discovered server ac-agauv1x-shard-00-02.d6fxrlw.mongodb.net:27017 to client view of cluster
+2026-04-08T10:02:36.311+05:30 DEBUG 4252 --- [smart-campus-hub] [           main] com.smartcampus.security.JwtAuthFilter   : Filter 'jwtAuthFilter' configured for use
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldOffset has been called by org.modelmapper.internal.typetools.TypeResolver (file:/C:/Users/WW/.m2/repository/org/modelmapper/modelmapper/3.1.1/modelmapper-3.1.1.jar)
+WARNING: Please consider reporting this to the maintainers of class org.modelmapper.internal.typetools.TypeResolver
+WARNING: sun.misc.Unsafe::staticFieldOffset will be removed in a future release
+2026-04-08T10:02:36.692+05:30  INFO 4252 --- [smart-campus-hub] [ngodb.net:27017] org.mongodb.driver.cluster               : Monitor thread successfully connected to server with description ServerDescription{address=ac-agauv1x-shard-00-02.d6fxrlw.mongodb.net:27017, type=REPLICA_SET_PRIMARY, state=CONNECTED, ok=true, minWireVersion=0, maxWireVersion=25, maxDocumentSize=16777216, logicalSessionTimeoutMinutes=30, roundTripTimeNanos=353269900, setName='atlas-mvr0l2-shard-0', canonicalAddress=ac-agauv1x-shard-00-02.d6fxrlw.mongodb.net:27017, hosts=[ac-agauv1x-shard-00-02.d6fxrlw.mongodb.net:27017, ac-agauv1x-shard-00-01.d6fxrlw.mongodb.net:27017, ac-agauv1x-shard-00-00.d6fxrlw.mongodb.net:27017], passives=[], arbiters=[], primary='ac-agauv1x-shard-00-02.d6fxrlw.mongodb.net:27017', tagSet=TagSet{[Tag{name='availabilityZone', value='aps1-az2'}, Tag{name='diskState', value='READY'}, Tag{name='nodeType', value='ELECTABLE'}, Tag{name='provider', value='AWS'}, Tag{name='region', value='AP_SOUTH_1'}, Tag{name='workloadType', value='OPERATIONAL'}]}, electionId=7fffffff0000000000000352, setVersion=282, topologyVersion=TopologyVersion{processId=69cfcda4dfa19e18ce80dc91, counter=6}, lastWriteDate=Wed Apr 08 10:02:36 IST 2026, lastUpdateTimeNanos=91332656296200}
+2026-04-08T10:02:36.695+05:30  INFO 4252 --- [smart-campus-hub] [ngodb.net:27017] org.mongodb.driver.cluster               : Discovered replica set primary ac-agauv1x-shard-00-02.d6fxrlw.mongodb.net:27017 with max election id 7fffffff0000000000000352 and max set version 282
+2026-04-08T10:02:36.696+05:30  INFO 4252 --- [smart-campus-hub] [ngodb.net:27017] org.mongodb.driver.cluster               : Monitor thread successfully connected to server with description ServerDescription{address=ac-agauv1x-shard-00-01.d6fxrlw.mongodb.net:27017, type=REPLICA_SET_SECONDARY, state=CONNECTED, ok=true, minWireVersion=0, maxWireVersion=25, maxDocumentSize=16777216, logicalSessionTimeoutMinutes=30, roundTripTimeNanos=356001700, setName='atlas-mvr0l2-shard-0', canonicalAddress=ac-agauv1x-shard-00-01.d6fxrlw.mongodb.net:27017, hosts=[ac-agauv1x-shard-00-02.d6fxrlw.mongodb.net:27017, ac-agauv1x-shard-00-01.d6fxrlw.mongodb.net:27017, ac-agauv1x-shard-00-00.d6fxrlw.mongodb.net:27017], passives=[], arbiters=[], primary='ac-agauv1x-shard-00-02.d6fxrlw.mongodb.net:27017', tagSet=TagSet{[Tag{name='availabilityZone', value='aps1-az3'}, Tag{name='diskState', value='READY'}, Tag{name='nodeType', value='ELECTABLE'}, Tag{name='provider', value='AWS'}, Tag{name='region', value='AP_SOUTH_1'}, Tag{name='workloadType', value='OPERATIONAL'}]}, electionId=null, setVersion=282, topologyVersion=TopologyVersion{processId=69cfd0ecdd9caf43f401a8de, counter=3}, lastWriteDate=Wed Apr 08 10:02:36 IST 2026, lastUpdateTimeNanos=91332661822600}
+2026-04-08T10:02:36.698+05:30  INFO 4252 --- [smart-campus-hub] [ngodb.net:27017] org.mongodb.driver.cluster               : Monitor thread successfully connected to server with description ServerDescription{address=ac-agauv1x-shard-00-00.d6fxrlw.mongodb.net:27017, type=REPLICA_SET_SECONDARY, state=CONNECTED, ok=true, minWireVersion=0, maxWireVersion=25, maxDocumentSize=16777216, logicalSessionTimeoutMinutes=30, roundTripTimeNanos=349733600, setName='atlas-mvr0l2-shard-0', canonicalAddress=ac-agauv1x-shard-00-00.d6fxrlw.mongodb.net:27017, hosts=[ac-agauv1x-shard-00-02.d6fxrlw.mongodb.net:27017, ac-agauv1x-shard-00-01.d6fxrlw.mongodb.net:27017, ac-agauv1x-shard-00-00.d6fxrlw.mongodb.net:27017], passives=[], arbiters=[], primary='ac-agauv1x-shard-00-02.d6fxrlw.mongodb.net:27017', tagSet=TagSet{[Tag{name='availabilityZone', value='aps1-az1'}, Tag{name='diskState', value='READY'}, Tag{name='nodeType', value='ELECTABLE'}, Tag{name='provider', value='AWS'}, Tag{name='region', value='AP_SOUTH_1'}, Tag{name='workloadType', value='OPERATIONAL'}]}, electionId=null, setVersion=282, topologyVersion=TopologyVersion{processId=69cfca5d27c00a8b1e07a623, counter=4}, lastWriteDate=Wed Apr 08 10:02:36 IST 2026, lastUpdateTimeNanos=91332663739200}
+2026-04-08T10:02:36.714+05:30  INFO 4252 --- [smart-campus-hub] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@dc59ec2, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@375084c9, org.springframework.security.web.context.SecurityContextHolderFilter@7b95bdb0, org.springframework.security.web.header.HeaderWriterFilter@7b3cbe6e, org.springframework.web.filter.CorsFilter@bd93bc3, org.springframework.security.web.authentication.logout.LogoutFilter@24691c5, com.smartcampus.security.JwtAuthFilter@7af0affa, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@664db2ca, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@1491cd6c, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@2a136383, org.springframework.security.web.session.SessionManagementFilter@6b25ef1c, org.springframework.security.web.access.ExceptionTranslationFilter@611c3eae, org.springframework.security.web.access.intercept.AuthorizationFilter@46cf8c07]
+2026-04-08T10:02:36.845+05:30  WARN 4252 --- [smart-campus-hub] [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2026-04-08T10:02:37.046+05:30  INFO 4252 --- [smart-campus-hub] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-04-08T10:02:37.062+05:30 ERROR 4252 --- [smart-campus-hub] [           main] o.s.b.d.LoggingFailureAnalysisReporter   : 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8081 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8081 or configure this application to listen on another port.
+
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.420 s
+[INFO] Finished at: 2026-04-08T10:02:37+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:3.2.4:run (default-cli) on project smart-campus-hub: Process terminated with exit code: 1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

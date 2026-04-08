@@ -13,24 +13,39 @@ import java.util.stream.Collectors;
 
 /**
  * ================================================================
- * GlobalExceptionHandler - Centralized Exception Handling
+ * GlobalExceptionHandler — Centralised Exception → HTTP Response Mapping
  * ================================================================
- * Owner: Member 1 (Team Lead)
  *
- * All unhandled exceptions bubble up here.
- * Returns consistent JSON error responses to the frontend.
+ * All unhandled exceptions propagate here and are converted to
+ * consistent JSON ErrorResponse bodies, so the frontend always
+ * receives a predictable structure regardless of the error type.
  *
- * TODO: All Members - Add module-specific exceptions here as needed
- *      (e.g., BookingConflictException, TicketAlreadyClosedException)
+ * HTTP STATUS MAPPING:
+ *  404  ResourceNotFoundException  → entity not found
+ *  400  BadRequestException        → business rule / bad input
+ *  403  BookingException(BOOKING_UNAUTHORIZED) → insufficient role
+ *  409  BookingException(BOOKING_CONFLICT)     → slot overlap
+ *  409  BookingException(INVALID_STATUS_TRANSITION) → bad workflow step
+ *  422  MethodArgumentNotValidException → @Valid annotation failures
+ *  403  UnauthorizedException      → auth/role violations from other modules
+ *  500  Exception                  → catch-all safety net
+ *
+ * NOTE on BookingException HTTP codes:
+ *  The class-level @ResponseStatus(CONFLICT) on BookingException would
+ *  make ALL booking exceptions return 409 — but BOOKING_UNAUTHORIZED
+ *  should be 403. We override that per-errorCode in the handler below.
  * ================================================================
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /** Handle 404 - Entity not found */
+    // ─── 404 Not Found ─────────────────────────────────────────
+
+    /** Booking, User, Resource, etc. not found by ID */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(
             ResourceNotFoundException ex, HttpServletRequest request) {
+
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 "Not Found",
@@ -40,10 +55,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
-    /** Handle 400 - Bad request / business rule violations */
+    // ─── 400 Bad Request ───────────────────────────────────────
+
+    /** General bad-request / explicit business rule violations */
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ErrorResponse> handleBadRequest(
             BadRequestException ex, HttpServletRequest request) {
+
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
@@ -53,10 +71,66 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
-    /** Handle 403 - Unauthorized access */
+    // ─── Booking Exceptions (409 or 403 depending on errorCode) ──
+
+    /**
+     * Handles all BookingException instances with smart HTTP status mapping:
+     *
+     *  BOOKING_UNAUTHORIZED        → 403 FORBIDDEN
+     *    (user lacks permission: not admin, not owner)
+     *
+     *  BOOKING_CONFLICT            → 409 CONFLICT
+     *    (overlapping approved booking detected during approval)
+     *
+     *  INVALID_STATUS_TRANSITION   → 409 CONFLICT
+     *    (e.g. trying to approve a REJECTED booking)
+     *
+     *  VALIDATION_ERROR            → 400 BAD REQUEST
+     *    (e.g. endTime before startTime, invalid filter value)
+     *
+     *  RESOURCE_UNAVAILABLE        → 400 BAD REQUEST
+     *    (booking a resource marked isAvailable=false)
+     *
+     *  All others                  → 409 CONFLICT (safe default)
+     */
+    @ExceptionHandler(BookingException.class)
+    public ResponseEntity<ErrorResponse> handleBookingException(
+            BookingException ex, HttpServletRequest request) {
+
+        HttpStatus httpStatus = resolveBookingHttpStatus(ex.getErrorCode());
+
+        ErrorResponse error = new ErrorResponse(
+                httpStatus.value(),
+                ex.getErrorCode(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(httpStatus).body(error);
+    }
+
+    /**
+     * Maps a BookingException's errorCode to the appropriate HTTP status.
+     * This ensures UNAUTHORIZED errors return 403, not 409.
+     */
+    private HttpStatus resolveBookingHttpStatus(String errorCode) {
+        if (errorCode == null) return HttpStatus.CONFLICT;
+        return switch (errorCode) {
+            case "BOOKING_UNAUTHORIZED"       -> HttpStatus.FORBIDDEN;
+            case "VALIDATION_ERROR"           -> HttpStatus.BAD_REQUEST;
+            case "RESOURCE_UNAVAILABLE"       -> HttpStatus.BAD_REQUEST;
+            case "BOOKING_CONFLICT"           -> HttpStatus.CONFLICT;
+            case "INVALID_STATUS_TRANSITION"  -> HttpStatus.CONFLICT;
+            default                           -> HttpStatus.CONFLICT;
+        };
+    }
+
+    // ─── 403 Forbidden ─────────────────────────────────────────
+
+    /** Auth/role violations from other modules (e.g., Resource, Ticket) */
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorized(
             UnauthorizedException ex, HttpServletRequest request) {
+
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.FORBIDDEN.value(),
                 "Forbidden",
@@ -66,7 +140,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 
-    /** Handle 422 - Validation errors from @Valid */
+    // ─── 422 Unprocessable Entity ──────────────────────────────
+
+    /**
+     * Handles @Valid annotation failures on @RequestBody DTOs.
+     * Collects all field-level validation messages into a list
+     * so the frontend can display them all at once (not just the first).
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationErrors(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
@@ -87,14 +167,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
     }
 
-    /** Handle 500 - Catch-all for unexpected errors */
+    // ─── 500 Internal Server Error ─────────────────────────────
+
+    /**
+     * Catch-all safety net for any unexpected runtime exceptions.
+     * Logs the full stack trace server-side but returns a generic
+     * message to the client to avoid leaking internal details.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(
             Exception ex, HttpServletRequest request) {
+
+        // In production you would log ex here with a correlation ID
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
-                "An unexpected error occurred. Please try again.",
+                "An unexpected error occurred. Please try again later.",
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
