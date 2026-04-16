@@ -33,7 +33,7 @@ import MainLayout from './components/MainLayout/MainLayout'
 import LoginPage        from './pages/Login/LoginPage'
 import DashboardPage    from './pages/Dashboard/DashboardPage'
 import ResourcesPage    from './pages/Resources/ResourcesPage'
-import BookingsPage     from './pages/Bookings/BookingsPage'
+import BookingPage      from './pages/Bookings/BookingPage'
 import TicketsPage      from './pages/Tickets/TicketsPage'
 import NotificationsPage from './pages/Notifications/NotificationsPage'
 
@@ -48,7 +48,7 @@ const App = () => {
           hideProgressBar={false}
           closeOnClick
           pauseOnHover
-          theme="light"
+          theme="dark"
         />
 
         <Routes>
@@ -74,7 +74,7 @@ const App = () => {
             <Route path="/resources" element={<ResourcesPage />} />
 
             {/* Booking Management - Member 2 */}
-            <Route path="/bookings" element={<BookingsPage />} />
+            <Route path="/bookings" element={<BookingPage />} />
 
             {/* Maintenance Tickets - Member 4 */}
             <Route path="/tickets" element={<TicketsPage />} />

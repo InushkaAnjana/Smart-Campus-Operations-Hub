@@ -1,37 +1,30 @@
 /**
- * ================================================================
- * LoginPage.jsx - User Authentication Page
- * ================================================================
- * Owner: Member 1 (Team Lead) - Auth Module
- *
- * TODO Member 1:
- *  - Add form validation (email format, password min length)
- *  - Show loading spinner on submit
- *  - Handle API error messages from backend
- *  - Add "Remember me" checkbox
- *  - Add forgot password link
- *  - Add Google OAuth button if needed
- * ================================================================
+ * LoginPage.jsx - User Authentication Page (Modern Tailwind UI)
  */
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { MdSchool, MdEmail, MdLock, MdVisibility, MdVisibilityOff } from 'react-icons/md'
+import { MdSchool, MdEmail, MdLock, MdVisibility, MdVisibilityOff, MdCheckCircle } from 'react-icons/md'
 import { useAuth } from '../../context/AuthContext'
-import './LoginPage.css'
+
+const FEATURES = [
+  'Facility Booking & Reservations',
+  'Maintenance Ticket Tracking',
+  'Real-time Notifications',
+  'Resource Management',
+]
 
 const LoginPage = () => {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [form, setForm]         = useState({ email: '', password: '' })
+  const [showPass, setShowPass] = useState(false)
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
 
-  const [form, setForm]           = useState({ email: '', password: '' })
-  const [showPass, setShowPass]   = useState(false)
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState('')
-
-  const handleChange = (e) =>
+  const handleChange = e =>
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault()
     setError('')
     setLoading(true)
@@ -46,82 +39,108 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="login-page">
-      {/* Left panel — branding */}
-      <div className="login-brand-panel">
-        <div className="login-brand-content">
-          <div className="login-brand-logo">
-            <MdSchool />
+    <div className="flex min-h-screen font-sans">
+      {/* ── Left Brand Panel ── */}
+      <div className="hidden lg:flex flex-col justify-center flex-1 bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#4338ca] px-16 py-12 relative overflow-hidden">
+        {/* Background blobs */}
+        <div className="absolute top-[-80px] left-[-80px] w-[360px] h-[360px] rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-[-60px] right-[-60px] w-[280px] h-[280px] rounded-full bg-purple-600/20 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 max-w-md">
+          {/* Logo */}
+          <div className="flex items-center gap-4 mb-10">
+            <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-500/30 text-indigo-200 text-4xl shadow-xl">
+              <MdSchool />
+            </div>
+            <div>
+              <h1 className="text-3xl font-extrabold text-white leading-tight">Smart Campus</h1>
+              <p className="text-indigo-300 text-sm">Operations Hub</p>
+            </div>
           </div>
-          <h1 className="login-brand-title">Smart Campus<br />Operations Hub</h1>
-          <p className="login-brand-desc">
-            Manage facilities, bookings, maintenance tickets and notifications
-            — all in one unified platform.
+
+          <p className="text-indigo-200 text-base leading-relaxed mb-10">
+            Manage facilities, bookings, maintenance tickets and notifications — all in one unified platform.
           </p>
-          <div className="login-features">
-            {['Facility Booking', 'Maintenance Tracking', 'Real-time Notifications', 'Resource Management'].map(f => (
-              <div key={f} className="login-feature-item">
-                <span className="login-feature-dot" />
+
+          <ul className="space-y-3">
+            {FEATURES.map(f => (
+              <li key={f} className="flex items-center gap-3 text-indigo-100 text-sm font-medium">
+                <MdCheckCircle className="text-emerald-400 text-lg shrink-0" />
                 {f}
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </div>
 
-      {/* Right panel — form */}
-      <div className="login-form-panel">
-        <div className="login-form-card">
-          <div className="login-form-header">
-            <h2>Welcome back</h2>
-            <p>Sign in to your account to continue</p>
+      {/* ── Right Form Panel ── */}
+      <div className="flex flex-1 flex-col items-center justify-center px-8 py-12 bg-slate-50">
+        {/* Mobile logo */}
+        <div className="flex lg:hidden items-center gap-3 mb-8">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-600 text-white text-2xl">
+            <MdSchool />
+          </div>
+          <span className="text-xl font-bold text-slate-800">SmartCampus Hub</span>
+        </div>
+
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl shadow-slate-200/80 border border-slate-100 px-8 py-10">
+          <div className="mb-8">
+            <h2 className="text-2xl font-extrabold text-slate-900">Welcome back 👋</h2>
+            <p className="mt-1 text-sm text-slate-500">Sign in to your campus account</p>
           </div>
 
           {error && (
-            <div className="alert alert-danger">{error}</div>
+            <div className="flex items-center gap-2 mb-5 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+              <span className="shrink-0">⚠</span>
+              {error}
+            </div>
           )}
 
-          <form onSubmit={handleSubmit} className="login-form">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}
-            <div className="form-group">
-              <label className="form-label" htmlFor="email">Email Address</label>
-              <div className="input-icon-wrapper">
-                <MdEmail className="input-icon" />
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
+                Email Address
+              </label>
+              <div className="relative">
+                <MdEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
                 <input
                   id="email"
                   type="email"
                   name="email"
-                  className="form-control input-with-icon"
-                  placeholder="you@university.edu"
                   value={form.email}
                   onChange={handleChange}
-                  required
+                  placeholder="you@university.edu"
                   autoComplete="email"
+                  required
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 rounded-xl bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 />
               </div>
             </div>
 
             {/* Password */}
-            <div className="form-group">
-              <label className="form-label" htmlFor="password">Password</label>
-              <div className="input-icon-wrapper">
-                <MdLock className="input-icon" />
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <MdLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
                 <input
                   id="password"
                   type={showPass ? 'text' : 'password'}
                   name="password"
-                  className="form-control input-with-icon input-with-icon-right"
-                  placeholder="Enter your password"
                   value={form.password}
                   onChange={handleChange}
-                  required
+                  placeholder="Enter your password"
                   autoComplete="current-password"
+                  required
+                  className="w-full pl-10 pr-12 py-2.5 text-sm border border-slate-300 rounded-xl bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 />
                 <button
                   type="button"
-                  className="input-icon-right"
                   onClick={() => setShowPass(p => !p)}
                   aria-label="Toggle password visibility"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-lg transition-colors"
                 >
                   {showPass ? <MdVisibilityOff /> : <MdVisibility />}
                 </button>
@@ -132,22 +151,28 @@ const LoginPage = () => {
             <button
               id="login-submit-btn"
               type="submit"
-              className="btn btn-primary btn-lg w-full"
               disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-200"
             >
-              {loading ? <span className="spinner" style={{ width: '1.2rem', height: '1.2rem' }} /> : 'Sign In'}
+              {loading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Signing in…
+                </>
+              ) : 'Sign In'}
             </button>
           </form>
 
-          <div className="login-form-footer">
-            <p>Don't have an account?{' '}
-              <Link to="/register" className="login-link">Register here</Link>
-            </p>
-          </div>
+          <p className="mt-6 text-center text-sm text-slate-500">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-indigo-600 font-semibold hover:text-indigo-800 transition-colors">
+              Register here
+            </Link>
+          </p>
 
-          {/* Dev shortcut - remove before production */}
-          <div className="login-dev-hint">
-            <small>🛠 Dev: Use any registered email & password from your H2 DB</small>
+          {/* Dev hint */}
+          <div className="mt-5 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700 text-center">
+            🛠 Dev: Use any registered email & password from your H2 DB
           </div>
         </div>
       </div>

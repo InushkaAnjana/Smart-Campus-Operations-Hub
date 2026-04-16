@@ -1,60 +1,64 @@
 /**
- * ================================================================
- * Topbar.jsx - Top Navigation Bar
- * ================================================================
- * Owner: Member 1 (Team Lead) - Layout
- *
- * TODO Member 4:
- *  - Wire notification bell to real unread count
- *  - Add notification dropdown panel
- * TODO Member 1:
- *  - Add breadcrumb based on current route
- * ================================================================
+ * Topbar.jsx - Top Navigation Bar (Modern Tailwind UI)
  */
 import { MdNotifications, MdMenu, MdSearch } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import './Topbar.css'
 
 const Topbar = ({ onMenuToggle, pageTitle }) => {
   const { user } = useAuth()
   const navigate = useNavigate()
-
-  // TODO: Member 4 - Replace with real unread count from useNotifications hook
-  const unreadCount = 3
+  const unreadCount = 3 // TODO: replace with real count
 
   return (
-    <header className="topbar">
-      {/* Left: Mobile menu + Page title */}
-      <div className="topbar-left">
-        <button className="topbar-menu-btn" onClick={onMenuToggle} aria-label="Toggle menu">
-          <MdMenu />
+    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white/80 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
+      {/* Left */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onMenuToggle}
+          aria-label="Toggle menu"
+          className="flex lg:hidden items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+        >
+          <MdMenu className="text-xl" />
         </button>
-        <h1 className="topbar-title">{pageTitle}</h1>
+        <h1 className="text-lg font-bold text-slate-800 tracking-tight">{pageTitle}</h1>
       </div>
 
-      {/* Right: Search + Notifications + Avatar */}
-      <div className="topbar-right">
-        {/* Search - TODO: Member 1 - Implement global search */}
-        <button className="topbar-icon-btn" aria-label="Search">
-          <MdSearch />
+      {/* Right */}
+      <div className="flex items-center gap-2">
+        {/* Search btn */}
+        <button
+          aria-label="Search"
+          className="flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition-colors"
+        >
+          <MdSearch className="text-xl" />
         </button>
 
         {/* Notification Bell */}
         <button
-          className="topbar-icon-btn topbar-notif-btn"
           aria-label="Notifications"
           onClick={() => navigate('/notifications')}
+          className="relative flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition-colors"
         >
-          <MdNotifications />
+          <MdNotifications className="text-xl" />
           {unreadCount > 0 && (
-            <span className="topbar-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+            <span className="absolute top-1.5 right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold shadow">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
           )}
         </button>
 
-        {/* User Avatar */}
-        <div className="topbar-avatar">
-          {user?.name?.[0]?.toUpperCase() || 'U'}
+        {/* Divider */}
+        <div className="w-px h-6 bg-slate-200 mx-1" />
+
+        {/* Avatar */}
+        <div className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-100 cursor-default transition-colors">
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-sm font-bold shadow">
+            {user?.name?.[0]?.toUpperCase() || 'U'}
+          </div>
+          <span className="hidden sm:block text-sm font-medium text-slate-700 max-w-[120px] truncate">
+            {user?.name || 'Guest'}
+          </span>
         </div>
       </div>
     </header>

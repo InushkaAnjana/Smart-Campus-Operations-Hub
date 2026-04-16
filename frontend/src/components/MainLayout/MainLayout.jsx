@@ -1,20 +1,11 @@
 /**
- * ================================================================
- * MainLayout.jsx - Authenticated App Shell Layout
- * ================================================================
- * Owner: Member 1 (Team Lead)
- *
- * Wraps all authenticated pages with Sidebar + Topbar.
- * All protected pages render inside this layout.
- * ================================================================
+ * MainLayout.jsx - Authenticated App Shell Layout (Modern Tailwind UI)
  */
 import { useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from '../Sidebar/Sidebar'
 import Topbar from '../Topbar/Topbar'
-import './MainLayout.css'
 
-// Map route paths to readable page titles for the topbar
 const PAGE_TITLES = {
   '/dashboard':     'Dashboard',
   '/resources':     'Facilities & Resources',
@@ -26,30 +17,34 @@ const PAGE_TITLES = {
 const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
-
   const pageTitle = PAGE_TITLES[location.pathname] || 'Smart Campus Hub'
 
   return (
-    <div className="layout">
-      {/* Sidebar */}
-      <Sidebar />
+    <div className="flex h-screen overflow-hidden bg-slate-50">
+      {/* Sidebar — always visible on lg+, slide-in on mobile */}
+      <div
+        className={`fixed inset-y-0 left-0 z-40 transition-transform duration-300 lg:static lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <Sidebar />
+      </div>
 
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="layout-overlay"
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Main content area */}
-      <div className="layout-main">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Topbar
           onMenuToggle={() => setSidebarOpen(prev => !prev)}
           pageTitle={pageTitle}
         />
-        <main className="layout-content">
-          {/* Authenticated route pages render here */}
+        <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
       </div>
