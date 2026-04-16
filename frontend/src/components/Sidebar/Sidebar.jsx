@@ -1,14 +1,5 @@
 /**
- * ================================================================
- * Sidebar.jsx - Main Navigation Sidebar
- * ================================================================
- * Owner: Member 1 (Team Lead) - Layout / Navigation
- *
- * TODO Member 1:
- *  - Add active link highlighting
- *  - Add role-based nav visibility (hide admin links for students)
- *  - Add mobile drawer/hamburger menu support
- * ================================================================
+ * Sidebar.jsx - Main Navigation Sidebar (Modern Tailwind UI)
  */
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
@@ -18,47 +9,16 @@ import {
   MdBuild,
   MdNotifications,
   MdLogout,
-  MdSettings,
   MdSchool,
 } from 'react-icons/md'
 import { useAuth } from '../../context/AuthContext'
-import './Sidebar.css'
 
 const NAV_ITEMS = [
-  {
-    label: 'Dashboard',
-    path: '/dashboard',
-    icon: <MdDashboard />,
-    description: 'Overview & stats',
-  },
-  {
-    label: 'Resources',
-    path: '/resources',
-    icon: <MdMeetingRoom />,
-    description: 'Facilities & Rooms',
-    // Owner: Member 3
-  },
-  {
-    label: 'Bookings',
-    path: '/bookings',
-    icon: <MdEventNote />,
-    description: 'Manage reservations',
-    // Owner: Member 2
-  },
-  {
-    label: 'Tickets',
-    path: '/tickets',
-    icon: <MdBuild />,
-    description: 'Maintenance issues',
-    // Owner: Member 4
-  },
-  {
-    label: 'Notifications',
-    path: '/notifications',
-    icon: <MdNotifications />,
-    description: 'Alerts & updates',
-    // Owner: Member 4
-  },
+  { label: 'Dashboard',     path: '/dashboard',     icon: MdDashboard,     description: 'Overview & stats' },
+  { label: 'Resources',     path: '/resources',     icon: MdMeetingRoom,   description: 'Facilities & Rooms' },
+  { label: 'Bookings',      path: '/bookings',      icon: MdEventNote,     description: 'Manage reservations' },
+  { label: 'Tickets',       path: '/tickets',       icon: MdBuild,         description: 'Maintenance issues' },
+  { label: 'Notifications', path: '/notifications', icon: MdNotifications, description: 'Alerts & updates' },
 ]
 
 const Sidebar = () => {
@@ -71,73 +31,69 @@ const Sidebar = () => {
   }
 
   return (
-    <aside className="sidebar">
-      {/* Logo / Brand */}
-      <div className="sidebar-brand">
-        <div className="sidebar-brand-icon">
+    <aside className="flex flex-col h-full w-[260px] min-w-[260px] bg-[#1e1b4b] text-indigo-100 shadow-2xl">
+      {/* ── Brand ── */}
+      <div className="flex items-center gap-3 px-6 py-5 border-b border-indigo-800/50">
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-500/30 text-indigo-200 text-xl shadow-inner">
           <MdSchool />
         </div>
-        <div className="sidebar-brand-text">
-          <span className="sidebar-brand-name">SmartCampus</span>
-          <span className="sidebar-brand-sub">Operations Hub</span>
+        <div className="flex flex-col leading-tight">
+          <span className="font-bold text-white text-sm tracking-wide">SmartCampus</span>
+          <span className="text-indigo-400 text-xs">Operations Hub</span>
         </div>
       </div>
 
-      {/* User Info */}
-      <div className="sidebar-user">
-        <div className="sidebar-avatar">
+      {/* ── User Info ── */}
+      <div className="flex items-center gap-3 px-5 py-4 mx-3 mt-4 rounded-xl bg-indigo-800/30 border border-indigo-700/30">
+        <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 text-white font-bold text-sm shadow-md shrink-0">
           {user?.name?.[0]?.toUpperCase() || 'U'}
         </div>
-        <div className="sidebar-user-info">
-          <span className="sidebar-user-name">{user?.name || 'Guest'}</span>
-          <span className="sidebar-user-role">{user?.role || 'USER'}</span>
+        <div className="flex flex-col min-w-0">
+          <span className="text-sm font-semibold text-white truncate">{user?.name || 'Guest'}</span>
+          <span className="text-xs text-indigo-400 uppercase tracking-widest">{user?.role || 'USER'}</span>
         </div>
       </div>
 
-      {/* Navigation Links */}
-      <nav className="sidebar-nav">
-        <p className="sidebar-nav-label">Main Menu</p>
-        <ul className="sidebar-nav-list">
-          {NAV_ITEMS.map((item) => (
-            <li key={item.path}>
+      {/* ── Nav ── */}
+      <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        <p className="px-3 mb-2 text-xs font-semibold text-indigo-500 uppercase tracking-widest">Main Menu</p>
+        <ul className="space-y-1">
+          {NAV_ITEMS.map(({ label, path, icon: Icon, description }) => (
+            <li key={path}>
               <NavLink
-                to={item.path}
+                to={path}
                 className={({ isActive }) =>
-                  `sidebar-nav-item ${isActive ? 'active' : ''}`
+                  `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/40'
+                      : 'text-indigo-300 hover:bg-indigo-800/60 hover:text-white'
+                  }`
                 }
               >
-                <span className="sidebar-nav-icon">{item.icon}</span>
-                <span className="sidebar-nav-text">{item.label}</span>
+                {({ isActive }) => (
+                  <>
+                    <span className={`text-xl shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-indigo-400 group-hover:text-indigo-200'}`}>
+                      <Icon />
+                    </span>
+                    <span>{label}</span>
+                    {isActive && (
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white opacity-80" />
+                    )}
+                  </>
+                )}
               </NavLink>
             </li>
           ))}
         </ul>
-
-        {/* Admin section - only visible to ADMIN role */}
-        {/* TODO: Member 1 - Uncomment and add admin-only pages */}
-        {/* {isAdmin && (
-          <>
-            <p className="sidebar-nav-label" style={{ marginTop: '1rem' }}>Admin</p>
-            <ul className="sidebar-nav-list">
-              <li>
-                <NavLink to="/admin/users" className="sidebar-nav-item">
-                  <span className="sidebar-nav-icon"><MdPeople /></span>
-                  <span className="sidebar-nav-text">Users</span>
-                </NavLink>
-              </li>
-            </ul>
-          </>
-        )} */}
       </nav>
 
-      {/* Bottom Actions */}
-      <div className="sidebar-footer">
-        {/* TODO: Member 1 - Add settings page */}
-        {/* <button className="sidebar-footer-btn">
-          <MdSettings /> Settings
-        </button> */}
-        <button className="sidebar-footer-btn sidebar-logout" onClick={handleLogout}>
-          <MdLogout />
+      {/* ── Footer ── */}
+      <div className="px-3 py-4 border-t border-indigo-800/50">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-indigo-300 hover:bg-red-500/20 hover:text-red-300 transition-all duration-200 group"
+        >
+          <MdLogout className="text-xl shrink-0 group-hover:scale-110 transition-transform" />
           <span>Logout</span>
         </button>
       </div>

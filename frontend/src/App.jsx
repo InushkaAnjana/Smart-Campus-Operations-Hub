@@ -48,7 +48,7 @@ const App = () => {
           hideProgressBar={false}
           closeOnClick
           pauseOnHover
-          theme="light"
+          theme="dark"
         />
 
         <Routes>
