@@ -585,7 +585,7 @@ public class BookingServiceImpl implements BookingService {
                                 resource.getId(),
                                 resource.getName(),
                                 resource.getLocation(),
-                                resource.getType())
+                                resource.getType() != null ? resource.getType().name() : null)
                         : null)
                 .build();
     }
