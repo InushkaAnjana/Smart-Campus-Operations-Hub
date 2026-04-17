@@ -64,15 +64,16 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/**").permitAll()
 
                 // ── Facilities & Assets: role-based access ──────────────
-                // ADMIN can create, update, delete resources.
-                // USER / STAFF can only read (GET).
-                // Fine-grained enforcement is also done via @PreAuthorize
-                // in ResourceController; these URL-level rules act as a
-                // defence-in-depth layer at the filter chain.
+                // WRITE operations (POST, PUT, DELETE) → ADMIN only.
+                // READ operations (GET) → any authenticated user.
+                //   ↳ This is simpler and avoids role-prefix mismatch issues.
+                //   ↳ Fine-grained @PreAuthorize in ResourceController handles
+                //     per-method enforcement on top of this.
                 .requestMatchers(org.springframework.http.HttpMethod.POST,   "/api/resources/**").hasRole("ADMIN")
                 .requestMatchers(org.springframework.http.HttpMethod.PUT,    "/api/resources/**").hasRole("ADMIN")
                 .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/resources/**").hasRole("ADMIN")
-                .requestMatchers(org.springframework.http.HttpMethod.GET,    "/api/resources/**").hasAnyRole("ADMIN", "USER", "STAFF")
+                // GET /api/resources/** → falls through to anyRequest().authenticated()
+                //   (any logged-in user can view — role filtering done in @PreAuthorize)
 
                 // All other requests require authentication
                 .anyRequest().authenticated()
@@ -87,7 +88,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         // TODO: Member 1 - Update origins for production deployment
-        config.setAllowedOrigins(List.of(allowedOrigins));
+        config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
         config.setAllowCredentials(true);

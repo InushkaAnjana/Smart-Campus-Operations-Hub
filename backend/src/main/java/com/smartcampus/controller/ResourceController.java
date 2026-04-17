@@ -122,7 +122,7 @@ public class ResourceController {
      * @return 200 with list of matching resources
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'STAFF')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ResourceResponseDTO>> getResources(
             @RequestParam(required = false) ResourceType type,
             @RequestParam(required = false) Integer capacity,
@@ -153,7 +153,7 @@ public class ResourceController {
      * @return 200 with list of available resources
      */
     @GetMapping("/available")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'STAFF')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ResourceResponseDTO>> getAvailableResources() {
         return ResponseEntity.ok(resourceService.getAvailableResources());
     }
@@ -174,7 +174,7 @@ public class ResourceController {
      * @return 200 with the resource DTO
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'STAFF')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResourceResponseDTO> getResourceById(@PathVariable String id) {
         return ResponseEntity.ok(resourceService.getResourceById(id));
     }
