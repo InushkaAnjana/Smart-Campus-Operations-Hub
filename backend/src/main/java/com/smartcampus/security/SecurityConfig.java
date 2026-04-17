@@ -63,9 +63,16 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll() // Dev only — remove in production
                 .requestMatchers("/actuator/**").permitAll()
 
-                // TODO: Member 1 - Uncomment and configure role-based access
-                // .requestMatchers(HttpMethod.POST, "/api/resources/**").hasRole("ADMIN")
-                // .requestMatchers(HttpMethod.DELETE, "/api/resources/**").hasRole("ADMIN")
+                // ── Facilities & Assets: role-based access ──────────────
+                // ADMIN can create, update, delete resources.
+                // USER / STAFF can only read (GET).
+                // Fine-grained enforcement is also done via @PreAuthorize
+                // in ResourceController; these URL-level rules act as a
+                // defence-in-depth layer at the filter chain.
+                .requestMatchers(org.springframework.http.HttpMethod.POST,   "/api/resources/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT,    "/api/resources/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/resources/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.GET,    "/api/resources/**").hasAnyRole("ADMIN", "USER", "STAFF")
 
                 // All other requests require authentication
                 .anyRequest().authenticated()

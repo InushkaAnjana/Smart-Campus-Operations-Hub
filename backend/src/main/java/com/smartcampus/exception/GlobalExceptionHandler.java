@@ -7,6 +7,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +27,11 @@ import java.util.stream.Collectors;
  *  403  BookingException(BOOKING_UNAUTHORIZED) → insufficient role
  *  409  BookingException(BOOKING_CONFLICT)     → slot overlap
  *  409  BookingException(INVALID_STATUS_TRANSITION) → bad workflow step
+ *  409  ResourceException(DUPLICATE_NAME)     → duplicate resource name
+ *  409  ResourceException(RESOURCE_IN_USE)    → resource has active bookings
+ *  400  ResourceException(INVALID_TYPE)       → bad enum string for type
+ *  400  ResourceException(CAPACITY_INVALID)   → capacity ≤ 0
+ *  400  MethodArgumentTypeMismatchException   → bad enum query param (e.g. type=INVALID)
  *  422  MethodArgumentNotValidException → @Valid annotation failures
  *  403  UnauthorizedException      → auth/role violations from other modules
  *  500  Exception                  → catch-all safety net
@@ -122,6 +128,68 @@ public class GlobalExceptionHandler {
             case "INVALID_STATUS_TRANSITION"  -> HttpStatus.CONFLICT;
             default                           -> HttpStatus.CONFLICT;
         };
+    }
+
+    // ─── Resource Module Exceptions (400 or 409) ───────────────
+
+    /**
+     * Handles ResourceException from the Facilities & Assets module.
+     *
+     * Error code → HTTP status mapping:
+     *   DUPLICATE_NAME    → 409 Conflict   (another resource has the same name)
+     *   RESOURCE_IN_USE   → 409 Conflict   (cannot delete a resource with bookings)
+     *   INVALID_TYPE      → 400 Bad Request (supplied string is not a valid ResourceType)
+     *   INVALID_STATUS    → 400 Bad Request (supplied string is not a valid ResourceStatus)
+     *   CAPACITY_INVALID  → 400 Bad Request (capacity ≤ 0)
+     */
+    @ExceptionHandler(ResourceException.class)
+    public ResponseEntity<ErrorResponse> handleResourceException(
+            ResourceException ex, HttpServletRequest request) {
+
+        HttpStatus httpStatus = resolveResourceHttpStatus(ex.getErrorCode());
+        ErrorResponse error = new ErrorResponse(
+                httpStatus.value(),
+                ex.getErrorCode(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(httpStatus).body(error);
+    }
+
+    /** Maps ResourceException error codes to HTTP status codes. */
+    private HttpStatus resolveResourceHttpStatus(String errorCode) {
+        if (errorCode == null) return HttpStatus.CONFLICT;
+        return switch (errorCode) {
+            case "INVALID_TYPE",
+                 "INVALID_STATUS",
+                 "CAPACITY_INVALID"  -> HttpStatus.BAD_REQUEST;
+            case "DUPLICATE_NAME",
+                 "RESOURCE_IN_USE"   -> HttpStatus.CONFLICT;
+            default                  -> HttpStatus.CONFLICT;
+        };
+    }
+
+    /**
+     * Catches Spring's type-mismatch error when an invalid enum string is
+     * supplied as a query param (e.g. ?type=INVALID or ?status=WRONG).
+     * Without this handler it would fall through to the 500 catch-all.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+
+        String message = String.format(
+                "Invalid value '%s' for parameter '%s'. Expected type: %s",
+                ex.getValue(), ex.getName(),
+                ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown"
+        );
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "INVALID_PARAMETER",
+                message,
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     // ─── 403 Forbidden ─────────────────────────────────────────
