@@ -1,38 +1,30 @@
 package com.smartcampus.service;
 
 import com.smartcampus.dto.TicketDTO;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-/**
- * ================================================================
- * TicketService Interface
- * ================================================================
- * Owner: Member 4 - Maintenance & Tickets Module
- *
- * TODO Member 4:
- *  - Implement all CRUD methods
- *  - Add notification trigger when ticket is created/updated
- *  - Add ticket assignment to staff
- *  - Add statistics method for dashboard (count by status)
- * ================================================================
- */
 public interface TicketService {
 
-    List<TicketDTO.TicketResponse> getAllTickets();
+    List<TicketDTO.TicketResponse> getAllTickets(String status, String priority, String assignedTo);
 
     TicketDTO.TicketResponse getTicketById(String id);
 
     List<TicketDTO.TicketResponse> getTicketsByUser(String userId);
 
-    List<TicketDTO.TicketResponse> getTicketsByStatus(String status);
+    TicketDTO.TicketResponse createTicket(String userId, TicketDTO.TicketRequest request, List<MultipartFile> images);
 
-    TicketDTO.TicketResponse createTicket(String userId, TicketDTO.TicketRequest request);
+    TicketDTO.TicketResponse updateTicketStatus(String id, String status, String rejectReason, String userId);
 
-    TicketDTO.TicketResponse updateTicket(String id, TicketDTO.TicketUpdateRequest request);
+    TicketDTO.TicketResponse assignTechnician(String id, String technicianId);
 
-    void closeTicket(String id);
+    TicketDTO.TicketResponse addComment(String id, String userId, TicketDTO.CommentDTO request);
+    
+    TicketDTO.TicketResponse updateComment(String id, String commentId, String userId, TicketDTO.CommentDTO request);
+    
+    TicketDTO.TicketResponse deleteComment(String id, String commentId, String userId);
 
-    // TODO: Member 4 - Add ticket statistics for dashboard
-    // Map<String, Long> getTicketStatistics();
+    void deleteTicket(String id);
+
 }

@@ -1,5 +1,7 @@
 package com.smartcampus.dto;
 
+import com.smartcampus.model.Priority;
+import com.smartcampus.model.TicketStatus;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,22 +9,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-/**
- * ================================================================
- * Ticket DTOs - Maintenance & Tickets Module
- * ================================================================
- * Owner: Member 4 - Maintenance & Tickets
- *
- * TODO Member 4:
- *  - Add TicketStatus and Priority enum fields
- *  - Add file attachment DTO for images
- *  - Add TicketCommentDTO for update threads
- * ================================================================
- */
 public class TicketDTO {
 
-    // ---- Create Ticket Request ----
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -33,40 +23,70 @@ public class TicketDTO {
         @NotBlank(message = "Description is required")
         private String description;
 
-        private String priority = "MEDIUM";
+        private Priority priority = Priority.MEDIUM;
+        
+        private String category;
+        
+        private String contactDetails;
 
-        @NotBlank(message = "Resource ID is required")
-        private String resourceId; // MongoDB ObjectId as String
+        // One of resourceId or location must be given
+        private String resourceId;
+        private String location;
     }
 
-    // ---- Update Ticket Status Request ----
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class TicketUpdateRequest {
-        private String status;
-        private String priority;
-        // TODO: Member 4 - Add assignedToId once staff management is set up
+        private TicketStatus status;
+        private Priority priority;
+        private String technicianId;
+        private String rejectReason;
     }
 
-    // ---- Ticket Response ----
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CommentDTO {
+        @NotBlank(message = "Message is required")
+        private String message;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CommentResponse {
+        private String id;
+        private String userId;
+        private String message;
+        private LocalDateTime timestamp;
+        private String userName; // helpful for frontend
+    }
+
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class TicketResponse {
-        private String id;        // MongoDB ObjectId as String
+        private String id;
         private String title;
         private String description;
-        private String status;
-        private String priority;
+        private TicketStatus status;
+        private Priority priority;
+        private String category;
+        private String contactDetails;
+        private List<String> images;
+        private String rejectReason;
+        private String location;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
         private LocalDateTime resolvedAt;
 
-        // Nested summaries
         private CreatorSummary createdBy;
+        private CreatorSummary technician; // Assigned To
         private ResourceSummary resource;
+        private List<CommentResponse> comments;
     }
 
     @Data

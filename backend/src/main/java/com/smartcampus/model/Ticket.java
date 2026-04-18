@@ -4,22 +4,15 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * ================================================================
- * Ticket Document (Maintenance & Issue Tracking) - MongoDB
- * ================================================================
- * Status flow: OPEN → IN_PROGRESS → RESOLVED → CLOSED
- * Priority levels: LOW | MEDIUM | HIGH | CRITICAL
- * ================================================================
- */
 @Document(collection = "tickets")
 @Getter
 @Setter
@@ -35,9 +28,17 @@ public class Ticket {
 
     private String description;
 
-    private String status; // OPEN | IN_PROGRESS | RESOLVED | CLOSED
+    private TicketStatus status;
 
-    private String priority; // LOW | MEDIUM | HIGH | CRITICAL
+    private Priority priority;
+
+    private String category;
+    
+    private String contactDetails;
+
+    private List<String> images; // Up to 3 images
+
+    private String rejectReason;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -47,13 +48,23 @@ public class Ticket {
     private String createdById;
 
     @Indexed
+    private String technicianId; // Assigned To
+
+    @Indexed
     private String resourceId;
+    
+    private String location; // resourceId or location
+
+    @Builder.Default
+    private List<Comment> comments = new ArrayList<>();
 
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
-        if (this.status == null) this.status = "OPEN";
-        if (this.priority == null) this.priority = "MEDIUM";
+        if (this.status == null) this.status = TicketStatus.OPEN;
+        if (this.priority == null) this.priority = Priority.MEDIUM;
+        if (this.images == null) this.images = new ArrayList<>();
+        if (this.comments == null) this.comments = new ArrayList<>();
     }
 
     public void onUpdate() {

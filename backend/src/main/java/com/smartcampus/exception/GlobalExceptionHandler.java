@@ -156,7 +156,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(httpStatus).body(error);
     }
 
-    /** Maps ResourceException error codes to HTTP status codes. */
     private HttpStatus resolveResourceHttpStatus(String errorCode) {
         if (errorCode == null) return HttpStatus.CONFLICT;
         return switch (errorCode) {
@@ -168,6 +167,32 @@ public class GlobalExceptionHandler {
             default                  -> HttpStatus.CONFLICT;
         };
     }
+
+    // ─── Ticket Module Exceptions (400 or 409) ─────────────────
+
+    @ExceptionHandler(TicketException.class)
+    public ResponseEntity<ErrorResponse> handleTicketException(
+            TicketException ex, HttpServletRequest request) {
+
+        HttpStatus httpStatus = resolveTicketHttpStatus(ex.getErrorCode());
+        ErrorResponse error = new ErrorResponse(
+                httpStatus.value(),
+                ex.getErrorCode(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(httpStatus).body(error);
+    }
+
+    private HttpStatus resolveTicketHttpStatus(String errorCode) {
+        if (errorCode == null) return HttpStatus.BAD_REQUEST;
+        return switch (errorCode) {
+            case "UNAUTHORIZED_ACTION" -> HttpStatus.FORBIDDEN;
+            case "INVALID_TRANSITION", "VALIDATION_ERROR" -> HttpStatus.BAD_REQUEST;
+            default -> HttpStatus.BAD_REQUEST;
+        };
+    }
+
 
     /**
      * Catches Spring's type-mismatch error when an invalid enum string is
