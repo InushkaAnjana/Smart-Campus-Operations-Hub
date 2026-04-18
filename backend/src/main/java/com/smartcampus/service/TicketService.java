@@ -1,38 +1,36 @@
 package com.smartcampus.service;
 
-import com.smartcampus.dto.TicketDTO;
+import com.smartcampus.dto.CommentDTO;
+import com.smartcampus.dto.TicketRequestDTO;
+import com.smartcampus.dto.TicketResponseDTO;
+import com.smartcampus.model.Priority;
+import com.smartcampus.model.TicketStatus;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 /**
- * ================================================================
- * TicketService Interface
- * ================================================================
- * Owner: Member 4 - Maintenance & Tickets Module
- *
- * TODO Member 4:
- *  - Implement all CRUD methods
- *  - Add notification trigger when ticket is created/updated
- *  - Add ticket assignment to staff
- *  - Add statistics method for dashboard (count by status)
- * ================================================================
+ * Service interface for Maintenance Tickets
  */
 public interface TicketService {
+    
+    TicketResponseDTO createTicket(TicketRequestDTO request, List<MultipartFile> images, String currentUserId);
+    
+    List<TicketResponseDTO> getAllTickets(TicketStatus status, Priority priority, String assignedTo);
+    
+    List<TicketResponseDTO> getUserTickets(String userId);
+    
+    TicketResponseDTO getTicketById(String id);
+    
+    TicketResponseDTO updateTicketStatus(String id, TicketStatus newStatus, String rejectionReason, String currentUserId);
+    
+    TicketResponseDTO assignTechnician(String id, String technicianId);
+    
+    TicketResponseDTO addComment(String id, CommentDTO commentDTO, String currentUserId, String currentUserName);
 
-    List<TicketDTO.TicketResponse> getAllTickets();
+    TicketResponseDTO editComment(String ticketId, int commentIndex, String newMessage, String currentUserId);
 
-    TicketDTO.TicketResponse getTicketById(String id);
+    TicketResponseDTO deleteComment(String ticketId, int commentIndex, String currentUserId);
 
-    List<TicketDTO.TicketResponse> getTicketsByUser(String userId);
-
-    List<TicketDTO.TicketResponse> getTicketsByStatus(String status);
-
-    TicketDTO.TicketResponse createTicket(String userId, TicketDTO.TicketRequest request);
-
-    TicketDTO.TicketResponse updateTicket(String id, TicketDTO.TicketUpdateRequest request);
-
-    void closeTicket(String id);
-
-    // TODO: Member 4 - Add ticket statistics for dashboard
-    // Map<String, Long> getTicketStatistics();
+    void deleteTicket(String id, String currentUserId);
 }

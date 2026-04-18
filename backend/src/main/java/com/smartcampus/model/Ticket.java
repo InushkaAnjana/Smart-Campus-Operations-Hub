@@ -1,28 +1,22 @@
 package com.smartcampus.model;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * ================================================================
- * Ticket Document (Maintenance & Issue Tracking) - MongoDB
- * ================================================================
- * Status flow: OPEN → IN_PROGRESS → RESOLVED → CLOSED
- * Priority levels: LOW | MEDIUM | HIGH | CRITICAL
- * ================================================================
+ * Maintenance & Incident Ticket Document
  */
 @Document(collection = "tickets")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -31,29 +25,44 @@ public class Ticket {
     @Id
     private String id;
 
-    private String title;
+    @Indexed
+    private String resourceId; // Optional: Specific asset
+    
+    private String location;   // Optional: General location if resourceId is null
+
+    private String category;   // e.g., Electrical, Plumbing, IT
 
     private String description;
 
-    private String status; // OPEN | IN_PROGRESS | RESOLVED | CLOSED
+    private Priority priority;
 
-    private String priority; // LOW | MEDIUM | HIGH | CRITICAL
+    private TicketStatus status;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private LocalDateTime resolvedAt;
+    private String contactDetails;
+
+    private List<String> imageAttachments = new ArrayList<>();
 
     @Indexed
     private String createdById;
 
     @Indexed
-    private String resourceId;
+    private String assignedToId; // Technician assigned
+
+    private String rejectionReason;
+
+    private List<Comment> comments = new ArrayList<>();
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime resolvedAt;
 
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
-        if (this.status == null) this.status = "OPEN";
-        if (this.priority == null) this.priority = "MEDIUM";
+        if (this.status == null) this.status = TicketStatus.OPEN;
+        if (this.priority == null) this.priority = Priority.MEDIUM;
+        if (this.imageAttachments == null) this.imageAttachments = new ArrayList<>();
+        if (this.comments == null) this.comments = new ArrayList<>();
     }
 
     public void onUpdate() {

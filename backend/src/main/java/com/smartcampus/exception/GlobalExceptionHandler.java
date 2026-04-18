@@ -77,6 +77,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    // ─── Ticket Exceptions ───────────────────────────────────────
+
+    /** Handles Maintenance & Incident Ticket related errors */
+    @ExceptionHandler(TicketException.class)
+    public ResponseEntity<ErrorResponse> handleTicketException(
+            TicketException ex, HttpServletRequest request) {
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Ticket Error",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     // ─── Booking Exceptions (409 or 403 depending on errorCode) ──
 
     /**

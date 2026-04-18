@@ -1,91 +1,148 @@
 package com.smartcampus.controller;
 
-import com.smartcampus.dto.TicketDTO;
+import com.smartcampus.dto.CommentDTO;
+import com.smartcampus.dto.TicketRequestDTO;
+import com.smartcampus.dto.TicketResponseDTO;
+import com.smartcampus.model.Priority;
+import com.smartcampus.model.TicketStatus;
 import com.smartcampus.service.TicketService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 /**
  * ================================================================
- * TicketController - Maintenance & Tickets Endpoints
- * ================================================================
- * Owner: Member 4 - Maintenance & Tickets Module
- * Base URL: /api/tickets
- *
- * TODO Member 4:
- *  - GET    /api/tickets                → All tickets (ADMIN)
- *  - GET    /api/tickets/{id}           → Get single ticket
- *  - GET    /api/tickets/user/{userId}  → Tickets by reporter
- *  - GET    /api/tickets/status/{status} → Filter by status
- *  - POST   /api/tickets                → Create/report new ticket
- *  - PUT    /api/tickets/{id}           → Update ticket (ADMIN/STAFF)
- *  - DELETE /api/tickets/{id}           → Close/delete ticket
- *  - GET    /api/tickets/stats          → Ticket statistics for dashboard
+ * TicketController - Maintenance & Incident Ticketing Endpoints
  * ================================================================
  */
 @RestController
 @RequestMapping("/api/tickets")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "${app.cors.allowed-origins}")
+@CrossOrigin(origins = "*") // Adjust for production
 public class TicketController {
 
     private final TicketService ticketService;
 
-    /** GET /api/tickets - Get all tickets (Admin/Staff only) */
-    @GetMapping
-    // TODO: Member 4 - Add @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
-    public ResponseEntity<List<TicketDTO.TicketResponse>> getAllTickets() {
-        return ResponseEntity.ok(ticketService.getAllTickets());
-    }
-
-    /** GET /api/tickets/{id} - Get ticket by ID */
-    @GetMapping("/{id}")
-    public ResponseEntity<TicketDTO.TicketResponse> getTicketById(@PathVariable String id) {
-        return ResponseEntity.ok(ticketService.getTicketById(id));
-    }
-
-    /** GET /api/tickets/user/{userId} - Get tickets reported by user */
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<TicketDTO.TicketResponse>> getTicketsByUser(@PathVariable String userId) {
-        return ResponseEntity.ok(ticketService.getTicketsByUser(userId));
-    }
-
-    /** GET /api/tickets/status/{status} - Get tickets by status */
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<TicketDTO.TicketResponse>> getTicketsByStatus(@PathVariable String status) {
-        return ResponseEntity.ok(ticketService.getTicketsByStatus(status));
+    /**
+     * POST /api/tickets - Create a new ticket with up to 3 images
+     */
+    @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    public ResponseEntity<TicketResponseDTO> createTicket(
+            @RequestPart("ticket") @Valid TicketRequestDTO ticketRequest,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId // Placeholder for Auth
+    ) {
+        TicketResponseDTO response = ticketService.createTicket(ticketRequest, images, userId);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     /**
-     * POST /api/tickets - Report a new maintenance ticket
-     * TODO: Member 4 - Replace userId param with @AuthenticationPrincipal
+     * GET /api/tickets - Admin view with filters
      */
-    @PostMapping
-    public ResponseEntity<TicketDTO.TicketResponse> createTicket(
-            @RequestParam String userId, // TODO: Member 4 → Replace with JWT principal
-            @Valid @RequestBody TicketDTO.TicketRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ticketService.createTicket(userId, request));
+    @GetMapping
+    public ResponseEntity<List<TicketResponseDTO>> getAllTickets(
+            @RequestParam(required = false) TicketStatus status,
+            @RequestParam(required = false) Priority priority,
+            @RequestParam(required = false) String assignedTo
+    ) {
+        return ResponseEntity.ok(ticketService.getAllTickets(status, priority, assignedTo));
     }
 
-    /** PUT /api/tickets/{id} - Update ticket (status, priority, assignment) */
-    @PutMapping("/{id}")
-    // TODO: Member 4 - Add @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
-    public ResponseEntity<TicketDTO.TicketResponse> updateTicket(
+    /**
+     * GET /api/tickets/my - Current user's tickets
+     */
+    @GetMapping("/my")
+    public ResponseEntity<List<TicketResponseDTO>> getMyTickets(
+            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId
+    ) {
+        return ResponseEntity.ok(ticketService.getUserTickets(userId));
+    }
+
+    /**
+     * GET /api/tickets/{id} - Get single ticket details
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<TicketResponseDTO> getTicketById(@PathVariable String id) {
+        return ResponseEntity.ok(ticketService.getTicketById(id));
+    }
+
+    /**
+     * PUT /api/tickets/{id}/status - Update ticket status (Workflow Enforcement)
+     */
+    @PutMapping("/{id}/status")
+    public ResponseEntity<TicketResponseDTO> updateStatus(
             @PathVariable String id,
-            @RequestBody TicketDTO.TicketUpdateRequest request) {
-        return ResponseEntity.ok(ticketService.updateTicket(id, request));
+            @RequestParam TicketStatus status,
+            @RequestParam(required = false) String reason,
+            @RequestHeader(value = "X-User-Id", defaultValue = "admin123") String userId
+    ) {
+        return ResponseEntity.ok(ticketService.updateTicketStatus(id, status, reason, userId));
     }
 
-    /** DELETE /api/tickets/{id} - Close a ticket */
+    /**
+     * PUT /api/tickets/{id}/assign - Assign a technician to a ticket
+     */
+    @PutMapping("/{id}/assign")
+    public ResponseEntity<TicketResponseDTO> assignTechnician(
+            @PathVariable String id,
+            @RequestParam String technicianId
+    ) {
+        return ResponseEntity.ok(ticketService.assignTechnician(id, technicianId));
+    }
+
+    /**
+     * PATCH /api/tickets/{id}/comment - Add a comment to the ticket
+     */
+    @PatchMapping("/{id}/comment")
+    public ResponseEntity<TicketResponseDTO> addComment(
+            @PathVariable String id,
+            @Valid @RequestBody CommentDTO commentDTO,
+            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId,
+            @RequestHeader(value = "X-User-Name", defaultValue = "John Doe") String userName
+    ) {
+        return ResponseEntity.ok(ticketService.addComment(id, commentDTO, userId, userName));
+    }
+
+    /**
+     * PUT /api/tickets/{id}/comment/{index} - Edit a comment
+     */
+    @PutMapping("/{id}/comment/{index}")
+    public ResponseEntity<TicketResponseDTO> editComment(
+            @PathVariable String id,
+            @PathVariable int index,
+            @RequestBody String message,
+            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId
+    ) {
+        return ResponseEntity.ok(ticketService.editComment(id, index, message, userId));
+    }
+
+    /**
+     * DELETE /api/tickets/{id}/comment/{index} - Delete a comment
+     */
+    @DeleteMapping("/{id}/comment/{index}")
+    public ResponseEntity<TicketResponseDTO> deleteComment(
+            @PathVariable String id,
+            @PathVariable int index,
+            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId
+    ) {
+        return ResponseEntity.ok(ticketService.deleteComment(id, index, userId));
+    }
+
+    /**
+     * DELETE /api/tickets/{id} - Delete a ticket
+     */
     @DeleteMapping("/{id}")
-    // TODO: Member 4 - Add @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
-    public ResponseEntity<Void> closeTicket(@PathVariable String id) {
-        ticketService.closeTicket(id);
+    public ResponseEntity<Void> deleteTicket(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId
+    ) {
+        ticketService.deleteTicket(id, userId);
         return ResponseEntity.noContent().build();
     }
 }

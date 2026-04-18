@@ -35,6 +35,8 @@ import DashboardPage    from './pages/Dashboard/DashboardPage'
 import ResourcesPage    from './pages/Resources/ResourcesPage'
 import BookingPage      from './pages/Bookings/BookingPage'
 import TicketsPage      from './pages/Tickets/TicketsPage'
+import MyTickets        from './pages/Tickets/MyTickets'
+import TicketDetails    from './pages/Tickets/TicketDetails'
 import NotificationsPage from './pages/Notifications/NotificationsPage'
 
 const App = () => {
@@ -78,6 +80,8 @@ const App = () => {
 
             {/* Maintenance Tickets - Member 4 */}
             <Route path="/tickets" element={<TicketsPage />} />
+            <Route path="/tickets/my" element={<MyTickets />} />
+            <Route path="/tickets/:id" element={<TicketDetails />} />
 
             {/* Notifications - Member 4 */}
             <Route path="/notifications" element={<NotificationsPage />} />
