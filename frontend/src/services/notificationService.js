@@ -26,4 +26,7 @@ export const notificationService = {
 
   /** PATCH /api/notifications/user/:userId/read-all */
   markAllAsRead: (userId) => api.patch(`${BASE}/user/${userId}/read-all`),
+
+  /** DELETE /api/notifications/:id */
+  deleteNotification: (id) => api.delete(`${BASE}/${id}`),
 }

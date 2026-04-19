@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.security.authentication.BadCredentialsException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -222,6 +223,66 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
+    // ─── Auth Exceptions (401 / 409 / 400 depending on errorCode) ──
+
+    /**
+     * Handles AuthException thrown by the Auth module.
+     *
+     * Error code → HTTP status mapping:
+     *   INVALID_CREDENTIALS → 401 Unauthorized  (wrong email/password)
+     *   TOKEN_EXPIRED       → 401 Unauthorized  (JWT expired)
+     *   AUTH_ERROR          → 401 Unauthorized  (general auth failure)
+     *   DUPLICATE_EMAIL     → 409 Conflict      (email already in use)
+     *   INVALID_ROLE        → 400 Bad Request   (role not in enum)
+     */
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ErrorResponse> handleAuthException(
+            AuthException ex, HttpServletRequest request) {
+
+        HttpStatus status = resolveAuthHttpStatus(ex.getErrorCode());
+        ErrorResponse error = new ErrorResponse(
+                status.value(),
+                ex.getErrorCode(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(status).body(error);
+    }
+
+    /**
+     * Maps AuthException error codes to appropriate HTTP status codes.
+     * Credentials/token failures → 401; email conflicts → 409; bad role → 400.
+     */
+    private HttpStatus resolveAuthHttpStatus(String errorCode) {
+        if (errorCode == null) return HttpStatus.UNAUTHORIZED;
+        return switch (errorCode) {
+            case "DUPLICATE_EMAIL"          -> HttpStatus.CONFLICT;
+            case "INVALID_ROLE"             -> HttpStatus.BAD_REQUEST;
+            case "INVALID_CREDENTIALS",
+                 "TOKEN_EXPIRED",
+                 "AUTH_ERROR"               -> HttpStatus.UNAUTHORIZED;
+            default                         -> HttpStatus.UNAUTHORIZED;
+        };
+    }
+
+    /**
+     * Handles Spring Security BadCredentialsException (thrown by AuthenticationManager
+     * during DaoAuthenticationProvider.authenticate() when password does not match).
+     * Returns 401 Unauthorized with a safe, non-leaking message.
+     */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(
+            BadCredentialsException ex, HttpServletRequest request) {
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                "INVALID_CREDENTIALS",
+                "Invalid email or password.",
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
     // ─── 422 Unprocessable Entity ──────────────────────────────

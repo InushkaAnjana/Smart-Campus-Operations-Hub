@@ -25,61 +25,63 @@ import java.util.List;
  * Base URL: /api/bookings
  *
  * ┌─────────────────────────────────────────────────────────────┐
- * │ Endpoint                              │ Who Can Call        │
+ * │ Endpoint │ Who Can Call │
  * ├─────────────────────────────────────────────────────────────┤
- * │ POST   /api/bookings                  │ Any auth user       │
- * │ GET    /api/bookings                  │ ADMIN only          │
- * │ GET    /api/bookings?status=X         │ ADMIN only (filter) │
- * │ GET    /api/bookings?resourceId=X     │ ADMIN only (filter) │
- * │ GET    /api/bookings?date=YYYY-MM-DD  │ ADMIN only (filter) │
- * │ GET    /api/bookings/my               │ Any auth user       │
- * │ GET    /api/bookings/{id}             │ Any auth user       │
- * │ PUT    /api/bookings/{id}/approve     │ ADMIN only          │
- * │ PUT    /api/bookings/{id}/reject      │ ADMIN only          │
- * │ PUT    /api/bookings/{id}/cancel      │ Owner or ADMIN      │
- * │ DELETE /api/bookings/{id}             │ ADMIN only          │
+ * │ POST /api/bookings │ Any auth user │
+ * │ GET /api/bookings │ ADMIN only │
+ * │ GET /api/bookings?status=X │ ADMIN only (filter) │
+ * │ GET /api/bookings?resourceId=X │ ADMIN only (filter) │
+ * │ GET /api/bookings?date=YYYY-MM-DD │ ADMIN only (filter) │
+ * │ GET /api/bookings/my │ Any auth user │
+ * │ GET /api/bookings/{id} │ Any auth user │
+ * │ PUT /api/bookings/{id}/approve │ ADMIN only │
+ * │ PUT /api/bookings/{id}/reject │ ADMIN only │
+ * │ PUT /api/bookings/{id}/cancel │ Owner or ADMIN │
+ * │ DELETE /api/bookings/{id} │ ADMIN only │
  * └─────────────────────────────────────────────────────────────┘
  *
  * HOW userId AND role ARE EXTRACTED:
- *  The JWT filter (JwtAuthFilter) validates the token and populates the
- *  Spring SecurityContext (email as principal, ROLE_XXX as authority).
- *  Helper methods resolveUserId() and resolveRole() extract these values.
+ * The JWT filter (JwtAuthFilter) validates the token and populates the
+ * Spring SecurityContext (email as principal, ROLE_XXX as authority).
+ * Helper methods resolveUserId() and resolveRole() extract these values.
  *
  * ─── POSTMAN TEST GUIDE ──────────────────────────────────────
  *
- * 1.  Register user  POST /api/auth/register
- *     Body: {"name":"Alice","email":"alice@campus.com","password":"pass123"}
- *     → save token, userId
+ * 1. Register user POST /api/auth/register
+ * Body: {"name":"Alice","email":"alice@campus.com","password":"pass123"}
+ * → save token, userId
  *
- * 2.  Create resource  POST /api/resources
- *     Auth: Bearer <adminToken>
- *     Body: {"name":"Lab 101","type":"LAB","location":"Block A","capacity":30,"isAvailable":true}
- *     → save id as resourceId
+ * 2. Create resource POST /api/resources
+ * Auth: Bearer <adminToken>
+ * Body: {"name":"Lab 101","type":"LAB","location":"Block
+ * A","capacity":30,"isAvailable":true}
+ * → save id as resourceId
  *
- * 3.  Create booking  POST /api/bookings
- *     Auth: Bearer <token>
- *     Body: {"resourceId":"...","startTime":"2026-05-01T09:00","endTime":"2026-05-01T11:00",
- *            "purpose":"Team meeting","attendeeCount":5}
- *     → status = PENDING; save id as bookingId
+ * 3. Create booking POST /api/bookings
+ * Auth: Bearer <token>
+ * Body:
+ * {"resourceId":"...","startTime":"2026-05-01T09:00","endTime":"2026-05-01T11:00",
+ * "purpose":"Team meeting","attendeeCount":5}
+ * → status = PENDING; save id as bookingId
  *
- * 4.  Approve  PUT /api/bookings/<bookingId>/approve
- *     Auth: Bearer <adminToken>
- *     Body: {"note":"Approved for team use"}
- *     → status = APPROVED
+ * 4. Approve PUT /api/bookings/<bookingId>/approve
+ * Auth: Bearer <adminToken>
+ * Body: {"note":"Approved for team use"}
+ * → status = APPROVED
  *
- * 5.  Reject   PUT /api/bookings/<bookingId>/reject
- *     Auth: Bearer <adminToken>
- *     Body: {"note":"Resource not available on this date"}
+ * 5. Reject PUT /api/bookings/<bookingId>/reject
+ * Auth: Bearer <adminToken>
+ * Body: {"note":"Resource not available on this date"}
  *
- * 6.  Filter   GET /api/bookings?status=APPROVED
- *     GET /api/bookings?resourceId=X&date=2026-05-01
+ * 6. Filter GET /api/bookings?status=APPROVED
+ * GET /api/bookings?resourceId=X&date=2026-05-01
  *
- * 7.  Delete   DELETE /api/bookings/<bookingId>
- *     Auth: Bearer <adminToken>
- *     → status = DELETED (soft delete, document kept in MongoDB)
+ * 7. Delete DELETE /api/bookings/<bookingId>
+ * Auth: Bearer <adminToken>
+ * → status = DELETED (soft delete, document kept in MongoDB)
  *
- * 8.  Conflict test: Create two overlapping bookings, approve first,
- *     then try to approve second → HTTP 409 BOOKING_CONFLICT
+ * 8. Conflict test: Create two overlapping bookings, approve first,
+ * then try to approve second → HTTP 409 BOOKING_CONFLICT
  * ================================================================
  */
 @Slf4j
@@ -89,8 +91,8 @@ import java.util.List;
 @CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class BookingController {
 
-    private final BookingService   bookingService;
-    private final UserRepository   userRepository;
+    private final BookingService bookingService;
+    private final UserRepository userRepository;
 
     // ════════════════════════════════════════════════════════════
     // POST /api/bookings — Create Booking
@@ -100,12 +102,12 @@ public class BookingController {
      * Create a new booking request.
      *
      * @Valid triggers DTO bean-validation (required fields, future dates, etc.)
-     * Service layer then validates:
-     *   - startTime < endTime (cross-field rule)
-     *   - attendeeCount ≥ 1
-     *   - resource exists and is available
+     *        Service layer then validates:
+     *        - startTime < endTime (cross-field rule)
+     *        - attendeeCount ≥ 1
+     *        - resource exists and is available
      *
-     * Returns HTTP 201 CREATED with full booking DTO.
+     *        Returns HTTP 201 CREATED with full booking DTO.
      */
     @PostMapping
     public ResponseEntity<BookingDTO.BookingResponse> createBooking(
@@ -126,14 +128,14 @@ public class BookingController {
      * Returns all bookings. ADMIN only.
      *
      * Supports optional query parameters for filtering:
-     *  - status     : e.g. ?status=APPROVED
-     *  - resourceId : e.g. ?resourceId=abc123
-     *  - userId     : e.g. ?userId=xyz789
-     *  - date       : e.g. ?date=2026-04-10  (ISO date format YYYY-MM-DD)
+     * - status : e.g. ?status=APPROVED
+     * - resourceId : e.g. ?resourceId=abc123
+     * - userId : e.g. ?userId=xyz789
+     * - date : e.g. ?date=2026-04-10 (ISO date format YYYY-MM-DD)
      *
      * Filters can be combined:
-     *  - ?status=APPROVED&resourceId=abc123
-     *  - ?date=2026-04-10&status=PENDING
+     * - ?status=APPROVED&resourceId=abc123
+     * - ?date=2026-04-10&status=PENDING
      *
      * Soft-deleted bookings (status=DELETED) are excluded automatically.
      *
@@ -150,7 +152,7 @@ public class BookingController {
         assertAdmin();
 
         log.info("GET /api/bookings — filters: status={}, resourceId={}, userId={}, date={}",
-                 status, resourceId, userId, date);
+                status, resourceId, userId, date);
 
         // Build filter DTO from query params (nulls are ignored by service)
         BookingDTO.BookingFilter filter = new BookingDTO.BookingFilter(status, resourceId, userId, date);
@@ -177,7 +179,10 @@ public class BookingController {
     // GET /api/bookings/{id} — Get Single Booking
     // ════════════════════════════════════════════════════════════
 
-    /** Returns a single booking by its MongoDB document ID. Returns 404 if not found. */
+    /**
+     * Returns a single booking by its MongoDB document ID. Returns 404 if not
+     * found.
+     */
     @GetMapping("/{id}")
     public ResponseEntity<BookingDTO.BookingResponse> getBookingById(@PathVariable String id) {
         log.info("GET /api/bookings/{}", id);
@@ -243,7 +248,7 @@ public class BookingController {
     @PutMapping("/{id}/cancel")
     public ResponseEntity<BookingDTO.BookingResponse> cancelBooking(@PathVariable String id) {
         String userId = resolveUserId();
-        String role   = resolveRole();
+        String role = resolveRole();
 
         log.info("PUT /api/bookings/{}/cancel — userId={} role={}", id, userId, role);
         return ResponseEntity.ok(bookingService.cancelBooking(id, userId, role));
@@ -257,11 +262,11 @@ public class BookingController {
      * Soft-delete a booking (ADMIN only).
      *
      * WHY SOFT DELETE?
-     *  Rather than physically removing the document from MongoDB, we set
-     *  status = DELETED and record deletedAt. This approach:
-     *   - Preserves the full audit trail for billing/compliance/disputes
-     *   - Allows accidental deletion recovery
-     *   - Does not break historical reports or analytics
+     * Rather than physically removing the document from MongoDB, we set
+     * status = DELETED and record deletedAt. This approach:
+     * - Preserves the full audit trail for billing/compliance/disputes
+     * - Allows accidental deletion recovery
+     * - Does not break historical reports or analytics
      *
      * Returns HTTP 200 OK with the final booking state (status = DELETED).
      * Use 204 No Content if you prefer not to return a body.

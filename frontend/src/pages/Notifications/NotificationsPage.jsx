@@ -16,7 +16,7 @@ const DEFAULT_CONFIG = { icon: MdNotifications, bg: 'bg-indigo-100', color: 'tex
 
 const NotificationsPage = () => {
   const { user } = useAuth()
-  const { notifications, unreadCount, loading, error, markRead, markAllRead } = useNotifications(user?.userId)
+  const { notifications, unreadCount, loading, error, markRead, markAllRead, deleteNotification } = useNotifications(user?.userId)
 
   return (
     <div className="space-y-5 animate-[fadeInAnim_0.2s_ease]">
@@ -114,12 +114,24 @@ const NotificationsPage = () => {
                   </span>
                 </div>
 
-                {/* Mark read hint */}
-                {isUnread && (
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-indigo-400 font-medium shrink-0 self-center">
-                    Mark read
-                  </div>
-                )}
+                {/* Mark read hint / Delete */}
+                <div className="flex flex-col items-end gap-2 shrink-0 self-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  {isUnread && (
+                    <span className="text-xs text-indigo-400 font-medium">
+                      Mark read
+                    </span>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteNotification(notification.id)
+                    }}
+                    className="p-1.5 rounded-md text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    aria-label="Delete notification"
+                  >
+                    <MdClose className="text-lg" />
+                  </button>
+                </div>
               </div>
             )
           })}

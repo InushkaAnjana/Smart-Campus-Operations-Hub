@@ -47,6 +47,17 @@ const useNotifications = (userId) => {
     setUnreadCount(0)
   }, [userId])
 
+  const deleteNotification = useCallback(async (id) => {
+    await notificationService.deleteNotification(id)
+    setNotifications(prev => {
+      const target = prev.find(n => n.id === id)
+      if (target && !target.isRead) {
+        setUnreadCount(count => Math.max(0, count - 1))
+      }
+      return prev.filter(n => n.id !== id)
+    })
+  }, [])
+
   useEffect(() => {
     fetchNotifications()
     // TODO: Member 4 - Add polling interval
@@ -54,7 +65,7 @@ const useNotifications = (userId) => {
     // return () => clearInterval(interval)
   }, [fetchNotifications])
 
-  return { notifications, unreadCount, loading, error, fetchNotifications, markRead, markAllRead }
+  return { notifications, unreadCount, loading, error, fetchNotifications, markRead, markAllRead, deleteNotification }
 }
 
 export default useNotifications
