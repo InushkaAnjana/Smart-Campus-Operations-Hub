@@ -81,6 +81,8 @@ import java.util.List;
  *  This enables horizontal scaling and removes the need for session replication.
  * ================================================================
  */
+import org.springframework.context.annotation.Lazy;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)  // Enables @PreAuthorize on controller methods
@@ -89,6 +91,9 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
+    @Lazy
+    private final GoogleOAuthSuccessHandler googleOAuthSuccessHandler;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
@@ -151,6 +156,9 @@ public class SecurityConfig {
                 // ── Catch-all: require authentication for anything else ─
                 .anyRequest().authenticated()
             )
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler(googleOAuthSuccessHandler)
+            )
             .headers(headers ->
                 headers.frameOptions(frame -> frame.disable()))  // Allows H2 console iframe (dev)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -203,22 +211,7 @@ public class SecurityConfig {
         return source;
     }
 
-    /**
-     * BCryptPasswordEncoder Bean.
-     *
-     * Uses BCrypt with default strength 10 (2^10 = 1024 rounds).
-     * Higher strength = slower hashing = more resistant to brute force.
-     * Strength 10 produces a hash in ~100ms on modern hardware.
-     *
-     * Used by:
-     *  - AuthServiceImpl.register()  → encode raw password before saving
-     *  - AuthServiceImpl.login()    → matches(rawPassword, encodedPassword)
-     *  - DaoAuthenticationProvider  → verifies credentials during authentication
-     */
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+
 
     /**
      * DaoAuthenticationProvider Bean.
@@ -233,7 +226,7 @@ public class SecurityConfig {
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
+        provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
 

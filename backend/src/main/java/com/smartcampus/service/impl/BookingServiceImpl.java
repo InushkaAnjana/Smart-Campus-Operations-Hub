@@ -11,6 +11,7 @@ import com.smartcampus.repository.BookingRepository;
 import com.smartcampus.repository.ResourceRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.BookingService;
+import com.smartcampus.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -62,6 +63,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final UserRepository    userRepository;
     private final ResourceRepository resourceRepository;
+    private final NotificationService notificationService;
 
     // ════════════════════════════════════════════════════════════
     // CREATE
@@ -119,7 +121,19 @@ public class BookingServiceImpl implements BookingService {
         booking.onCreate();
         booking = bookingRepository.save(booking);
 
-        log.info("Booking created: id={} status=PENDING", booking.getId());
+        // ── CASE 1: Notify ALL ADMIN users that a new booking request was received ──
+        final String bookingId = booking.getId();
+        final String resourceName = resource.getName();
+        userRepository.findByRole("ADMIN").forEach(admin ->
+            notificationService.sendNotification(
+                admin.getId(),
+                "New Booking Request",
+                user.getName() + " has submitted a new booking request for '" + resourceName + "'.",
+                "BOOKING_PENDING"
+            )
+        );
+
+        log.info("Booking created: id={} status=PENDING", bookingId);
         return buildResponse(booking, user, resource);
     }
 
@@ -205,6 +219,15 @@ public class BookingServiceImpl implements BookingService {
 
         User user = findUserById(booking.getUserId());
         Resource resource = findResourceById(booking.getResourceId());
+
+        // ── CASE 2: Notify the booking owner that their request was approved ──
+        notificationService.sendNotification(
+            user.getId(),
+            "Booking Approved",
+            "Your booking request for '" + resource.getName() + "' has been approved.",
+            "BOOKING_APPROVED"
+        );
+
         return buildResponse(booking, user, resource);
     }
 
@@ -249,6 +272,15 @@ public class BookingServiceImpl implements BookingService {
 
         User user = findUserById(booking.getUserId());
         Resource resource = findResourceById(booking.getResourceId());
+
+        // ── CASE 2: Notify the booking owner that their request was rejected ──
+        notificationService.sendNotification(
+            user.getId(),
+            "Booking Rejected",
+            "Your booking request for '" + resource.getName() + "' has been rejected. Reason: " + adminNote,
+            "BOOKING_REJECTED"
+        );
+
         return buildResponse(booking, user, resource);
     }
 

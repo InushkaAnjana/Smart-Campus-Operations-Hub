@@ -32,6 +32,7 @@ import MainLayout from './components/MainLayout/MainLayout'
 // Pages
 import LoginPage        from './pages/Login/LoginPage'
 import RegisterPage     from './pages/Register/RegisterPage'
+import OAuthCallback    from './pages/Login/OAuthCallback'
 import DashboardPage    from './pages/Dashboard/DashboardPage'
 import ResourcesPage    from './pages/Resources/ResourcesPage'
 import BookingPage      from './pages/Bookings/BookingPage'
@@ -57,9 +58,8 @@ const App = () => {
         <Routes>
           {/* ---- Public Routes ---- */}
           <Route path="/login" element={<LoginPage />} />
-
-          {/* Member 1 - Add register page */}
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/oauth/callback" element={<OAuthCallback />} />
 
           {/* ---- Normal Routes (temporarily unprotected) ---- */}
           <Route
