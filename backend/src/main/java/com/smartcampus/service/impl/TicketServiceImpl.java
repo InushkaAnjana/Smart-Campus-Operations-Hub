@@ -9,6 +9,7 @@ import com.smartcampus.model.*;
 import com.smartcampus.repository.TicketRepository;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.TicketService;
+import com.smartcampus.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,6 +36,7 @@ public class TicketServiceImpl implements TicketService {
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     // Directory for image uploads
     private final String uploadDir = "uploads/tickets";
@@ -72,13 +74,31 @@ public class TicketServiceImpl implements TicketService {
         }
 
         Ticket savedTicket = ticketRepository.save(ticket);
+
+        // ── CASE 3: Notify ALL ADMIN users that a new ticket has been created ──
+        userRepository.findByRole("ADMIN").forEach(admin -> notificationService.sendNotification(
+                admin.getId(),
+                "New Maintenance Ticket",
+                "A new maintenance ticket has been submitted: '" + request.getDescription() + "'.",
+                "TICKET_OPENED"));
+
+        // ── CASE 3b (optional): Confirm ticket submission to the owner ──────────
+        // Sends a receipt-style notification so the creator knows their ticket
+        // was persisted and is now awaiting admin review.
+        notificationService.sendNotification(
+                currentUserId,
+                "Ticket Submitted Successfully",
+                "Your ticket has been successfully submitted and is awaiting review.",
+                "TICKET_OPENED");
+
         return mapToResponse(savedTicket);
+
     }
 
     @Override
     public List<TicketResponseDTO> getAllTickets(TicketStatus status, Priority priority, String assignedTo) {
         List<Ticket> tickets;
-        
+
         if (status != null && priority != null) {
             tickets = ticketRepository.findByStatusAndPriority(status, priority);
         } else if (status != null) {
@@ -109,7 +129,8 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public TicketResponseDTO updateTicketStatus(String id, TicketStatus newStatus, String rejectionReason, String currentUserId) {
+    public TicketResponseDTO updateTicketStatus(String id, TicketStatus newStatus, String rejectionReason,
+            String currentUserId) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
 
@@ -129,7 +150,26 @@ public class TicketServiceImpl implements TicketService {
             ticket.setResolvedAt(LocalDateTime.now());
         }
 
-        return mapToResponse(ticketRepository.save(ticket));
+        Ticket updatedTicket = ticketRepository.save(ticket);
+
+        // ── CASE 5: Notify the ticket owner when their ticket is RESOLVED or REJECTED
+        // ──
+        if (newStatus == TicketStatus.RESOLVED || newStatus == TicketStatus.REJECTED) {
+            String ownerTitle = newStatus == TicketStatus.RESOLVED
+                    ? "Ticket Resolved"
+                    : "Ticket Rejected";
+            String ownerMessage = newStatus == TicketStatus.RESOLVED
+                    ? "Your maintenance ticket has been marked as resolved."
+                    : "Your maintenance ticket has been rejected. Reason: " + rejectionReason;
+
+            notificationService.sendNotification(
+                    ticket.getCreatedById(),
+                    ownerTitle,
+                    ownerMessage,
+                    newStatus == TicketStatus.RESOLVED ? "TICKET_UPDATED" : "TICKET_UPDATED");
+        }
+
+        return mapToResponse(updatedTicket);
     }
 
     @Override
@@ -137,17 +177,29 @@ public class TicketServiceImpl implements TicketService {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
 
-        // Verify technician exists (assuming staff management is handled by UserRepository)
+        // Verify technician exists (assuming staff management is handled by
+        // UserRepository)
         userRepository.findById(technicianId)
                 .orElseThrow(() -> new ResourceNotFoundException("Technician not found with id: " + technicianId));
 
         ticket.setAssignedToId(technicianId);
         ticket.onUpdate();
-        return mapToResponse(ticketRepository.save(ticket));
+        Ticket savedTicket = ticketRepository.save(ticket);
+
+        // ── CASE 4: Notify the specific TECHNICIAN that a ticket has been assigned to
+        // them ──
+        notificationService.sendNotification(
+                technicianId,
+                "New Ticket Assigned",
+                "A maintenance ticket has been assigned to you: '" + ticket.getDescription() + "'.",
+                "TICKET_UPDATED");
+
+        return mapToResponse(savedTicket);
     }
 
     @Override
-    public TicketResponseDTO addComment(String id, CommentDTO commentDTO, String currentUserId, String currentUserName) {
+    public TicketResponseDTO addComment(String id, CommentDTO commentDTO, String currentUserId,
+            String currentUserName) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
 
@@ -158,7 +210,8 @@ public class TicketServiceImpl implements TicketService {
                 .timestamp(LocalDateTime.now())
                 .build();
 
-        if (ticket.getComments() == null) ticket.setComments(new ArrayList<>());
+        if (ticket.getComments() == null)
+            ticket.setComments(new ArrayList<>());
         ticket.getComments().add(comment);
         ticket.onUpdate();
 
@@ -213,7 +266,8 @@ public class TicketServiceImpl implements TicketService {
 
         // Only owner or admin can delete (simplified)
         if (!ticket.getCreatedById().equals(currentUserId)) {
-            // Check for ADMIN role via UserRepository if needed, but usually handled by Security
+            // Check for ADMIN role via UserRepository if needed, but usually handled by
+            // Security
             // throw new TicketException("Not authorized to delete this ticket");
         }
 
@@ -255,8 +309,10 @@ public class TicketServiceImpl implements TicketService {
      * - Any -> REJECTED (via ADMIN)
      */
     private void validateStatusTransition(TicketStatus current, TicketStatus target) {
-        if (current == target) return;
-        if (target == TicketStatus.REJECTED) return; // Admin can reject at any time
+        if (current == target)
+            return;
+        if (target == TicketStatus.REJECTED)
+            return; // Admin can reject at any time
 
         boolean valid = switch (current) {
             case OPEN -> target == TicketStatus.IN_PROGRESS;
@@ -271,8 +327,8 @@ public class TicketServiceImpl implements TicketService {
     }
 
     private TicketResponseDTO mapToResponse(Ticket ticket) {
-        List<CommentDTO> commentDTOs = ticket.getComments() == null ? new ArrayList<>() :
-                ticket.getComments().stream()
+        List<CommentDTO> commentDTOs = ticket.getComments() == null ? new ArrayList<>()
+                : ticket.getComments().stream()
                         .map(c -> CommentDTO.builder()
                                 .userId(c.getUserId())
                                 .userName(c.getUserName())

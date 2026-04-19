@@ -19,8 +19,14 @@ import java.util.List;
  *  - sendNotification()        → Internal trigger called by other services
  *
  * NOTIFICATION TRIGGERS:
- *  BookingService  → BOOKING_APPROVED, BOOKING_REJECTED, BOOKING_CANCELLED
- *  TicketService   → TICKET_OPENED, TICKET_UPDATED, TICKET_COMMENT
+ *  BookingService  → BOOKING_PENDING  (→ ALL ADMINs when user creates booking)
+ *  BookingService  → BOOKING_APPROVED (→ booking owner when admin approves)
+ *  BookingService  → BOOKING_REJECTED (→ booking owner when admin rejects)
+ *  BookingService  → BOOKING_CANCELLED
+ *  TicketService   → TICKET_OPENED    (→ ALL ADMINs when user creates a ticket)
+ *  TicketService   → TICKET_UPDATED   (→ assigned TECHNICIAN on assignment;
+ *                                       → ticket owner on RESOLVED/REJECTED)
+ *  TicketService   → TICKET_COMMENT
  * ================================================================
  */
 public interface NotificationService {
