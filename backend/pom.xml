@@ -19,7 +19,7 @@
     <description>Team project - Smart Campus Operations Hub REST API</description>
 
     <properties>
-        <java.version>23</java.version>
+        <java.version>17</java.version>
         <lombok.version>1.18.38</lombok.version>
     </properties>
 

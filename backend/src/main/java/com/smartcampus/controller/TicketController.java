@@ -49,8 +49,7 @@ public class TicketController {
     public ResponseEntity<List<TicketResponseDTO>> getAllTickets(
             @RequestParam(required = false) TicketStatus status,
             @RequestParam(required = false) Priority priority,
-            @RequestParam(required = false) String assignedTo
-    ) {
+            @RequestParam(required = false) String assignedTo) {
         return ResponseEntity.ok(ticketService.getAllTickets(status, priority, assignedTo));
     }
 
@@ -59,8 +58,7 @@ public class TicketController {
      */
     @GetMapping("/my")
     public ResponseEntity<List<TicketResponseDTO>> getMyTickets(
-            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId
-    ) {
+            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId) {
         return ResponseEntity.ok(ticketService.getUserTickets(userId));
     }
 
@@ -80,8 +78,7 @@ public class TicketController {
             @PathVariable String id,
             @RequestParam TicketStatus status,
             @RequestParam(required = false) String reason,
-            @RequestHeader(value = "X-User-Id", defaultValue = "admin123") String userId
-    ) {
+            @RequestHeader(value = "X-User-Id", defaultValue = "admin123") String userId) {
         return ResponseEntity.ok(ticketService.updateTicketStatus(id, status, reason, userId));
     }
 
@@ -91,8 +88,7 @@ public class TicketController {
     @PutMapping("/{id}/assign")
     public ResponseEntity<TicketResponseDTO> assignTechnician(
             @PathVariable String id,
-            @RequestParam String technicianId
-    ) {
+            @RequestParam String technicianId) {
         return ResponseEntity.ok(ticketService.assignTechnician(id, technicianId));
     }
 
@@ -104,8 +100,7 @@ public class TicketController {
             @PathVariable String id,
             @Valid @RequestBody CommentDTO commentDTO,
             @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId,
-            @RequestHeader(value = "X-User-Name", defaultValue = "John Doe") String userName
-    ) {
+            @RequestHeader(value = "X-User-Name", defaultValue = "John Doe") String userName) {
         return ResponseEntity.ok(ticketService.addComment(id, commentDTO, userId, userName));
     }
 
@@ -117,8 +112,7 @@ public class TicketController {
             @PathVariable String id,
             @PathVariable int index,
             @RequestBody String message,
-            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId
-    ) {
+            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId) {
         return ResponseEntity.ok(ticketService.editComment(id, index, message, userId));
     }
 
@@ -129,8 +123,7 @@ public class TicketController {
     public ResponseEntity<TicketResponseDTO> deleteComment(
             @PathVariable String id,
             @PathVariable int index,
-            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId
-    ) {
+            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId) {
         return ResponseEntity.ok(ticketService.deleteComment(id, index, userId));
     }
 
@@ -140,8 +133,7 @@ public class TicketController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTicket(
             @PathVariable String id,
-            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId
-    ) {
+            @RequestHeader(value = "X-User-Id", defaultValue = "user123") String userId) {
         ticketService.deleteTicket(id, userId);
         return ResponseEntity.noContent().build();
     }

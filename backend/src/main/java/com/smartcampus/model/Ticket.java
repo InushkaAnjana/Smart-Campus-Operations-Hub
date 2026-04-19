@@ -27,10 +27,10 @@ public class Ticket {
 
     @Indexed
     private String resourceId; // Optional: Specific asset
-    
-    private String location;   // Optional: General location if resourceId is null
 
-    private String category;   // e.g., Electrical, Plumbing, IT
+    private String location; // Optional: General location if resourceId is null
+
+    private String category; // e.g., Electrical, Plumbing, IT
 
     private String description;
 
@@ -59,10 +59,14 @@ public class Ticket {
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
-        if (this.status == null) this.status = TicketStatus.OPEN;
-        if (this.priority == null) this.priority = Priority.MEDIUM;
-        if (this.imageAttachments == null) this.imageAttachments = new ArrayList<>();
-        if (this.comments == null) this.comments = new ArrayList<>();
+        if (this.status == null)
+            this.status = TicketStatus.OPEN;
+        if (this.priority == null)
+            this.priority = Priority.MEDIUM;
+        if (this.imageAttachments == null)
+            this.imageAttachments = new ArrayList<>();
+        if (this.comments == null)
+            this.comments = new ArrayList<>();
     }
 
     public void onUpdate() {

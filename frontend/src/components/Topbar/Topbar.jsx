@@ -5,10 +5,10 @@ import { MdNotifications, MdMenu, MdSearch } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
+import NotificationBell from './NotificationBell'
+
 const Topbar = ({ onMenuToggle, pageTitle }) => {
   const { user } = useAuth()
-  const navigate = useNavigate()
-  const unreadCount = 3 // TODO: replace with real count
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white/80 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
@@ -34,19 +34,8 @@ const Topbar = ({ onMenuToggle, pageTitle }) => {
           <MdSearch className="text-xl" />
         </button>
 
-        {/* Notification Bell */}
-        <button
-          aria-label="Notifications"
-          onClick={() => navigate('/notifications')}
-          className="relative flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition-colors"
-        >
-          <MdNotifications className="text-xl" />
-          {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold shadow">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </button>
+        {/* Notification Bell Dropdown */}
+        <NotificationBell />
 
         {/* Divider */}
         <div className="w-px h-6 bg-slate-200 mx-1" />

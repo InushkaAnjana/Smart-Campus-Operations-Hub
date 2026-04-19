@@ -31,6 +31,7 @@ import MainLayout from './components/MainLayout/MainLayout'
 
 // Pages
 import LoginPage        from './pages/Login/LoginPage'
+import RegisterPage     from './pages/Register/RegisterPage'
 import DashboardPage    from './pages/Dashboard/DashboardPage'
 import ResourcesPage    from './pages/Resources/ResourcesPage'
 import BookingPage      from './pages/Bookings/BookingPage'
@@ -57,8 +58,8 @@ const App = () => {
           {/* ---- Public Routes ---- */}
           <Route path="/login" element={<LoginPage />} />
 
-          {/* TODO: Member 1 - Add register page */}
-          {/* <Route path="/register" element={<RegisterPage />} /> */}
+          {/* Member 1 - Add register page */}
+          <Route path="/register" element={<RegisterPage />} />
 
           {/* ---- Normal Routes (temporarily unprotected) ---- */}
           <Route

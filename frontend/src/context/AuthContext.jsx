@@ -7,11 +7,19 @@
  * Provides auth state (user, token, isAuthenticated) to the
  * entire app via React Context API.
  *
- * Usage:  const { user, login, logout } = useAuth()
+ * Usage:  const { user, login, logout, isAdmin, routeRole } = useAuth()
  *
- * TODO Member 1:
- *  - Add token refresh logic on app load
- *  - Add role-based access helpers (isAdmin, isStaff)
+ * JWT Handling Details:
+ *  - Tokens are stored securely in localStorage as 'token' upon successful login/register.
+ *  - On app load, `useEffect` checks for 'token' and restores user state.
+ *  - The interceptor in `axiosConfig.js` automatically attaches this token 
+ *    as an `Authorization: Bearer <token>` header to all outgoing API requests.
+ *  - On manual logout or a 401 response intercept, the token is destroyed.
+ *
+ * Role-Based Rendering:
+ *  - User objects contain a `role` field (e.g. 'ADMIN', 'USER', 'TECHNICIAN').
+ *  - `isAdmin` boolean simplifies admin-only UI checks (e.g. showing users page).
+ *  - Use to protect layouts, routes, or toggle feature visibility.
  * ================================================================
  */
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
@@ -58,16 +66,22 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   // Helper role checks
-  // TODO: Member 1 - Expand role checking as needed
   const isAdmin = user?.role === 'ADMIN'
-  const isStaff = user?.role === 'STAFF' || user?.role === 'ADMIN'
+  const isTechnician = user?.role === 'TECHNICIAN'
+  
+  // A generic wrapper for checking multiple roles
+  const hasRole = useCallback((roles) => {
+    if (!user) return false
+    return roles.includes(user.role)
+  }, [user])
 
   const value = {
     user,
     isAuthenticated,
     loading,
     isAdmin,
-    isStaff,
+    isTechnician,
+    hasRole,
     login,
     register,
     logout,
