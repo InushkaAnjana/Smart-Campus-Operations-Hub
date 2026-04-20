@@ -4,12 +4,20 @@
  * ================================================================
  * Owner: Member 1 (Team Lead) - Auth Module
  *
- * Redirects unauthenticated users to /login.
- * Wrap any route with <ProtectedRoute> to protect it.
+ * Usage patterns:
  *
- * TODO Member 1:
- *  - Add role-based protection: <ProtectedRoute roles={['ADMIN']} />
- *  - Show "Access Denied" page for insufficient roles
+ *   1. As a layout route wrapper (most common — used in App.jsx):
+ *      <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+ *        <Route path="/dashboard" element={<DashboardPage />} />
+ *      </Route>
+ *
+ *   2. As a leaf-level wrapper for a specific role:
+ *      <Route path="/admin" element={
+ *        <ProtectedRoute roles={['ADMIN']}><AdminPage /></ProtectedRoute>
+ *      } />
+ *
+ * Redirects unauthenticated users to /login, preserving the intended URL
+ * in location state so LoginPage can redirect back after login.
  * ================================================================
  */
 import { Navigate, useLocation } from 'react-router-dom'
@@ -19,7 +27,7 @@ const ProtectedRoute = ({ children, roles }) => {
   const { isAuthenticated, loading, hasRole } = useAuth()
   const location = useLocation()
 
-  // Wait for auth state to load from localStorage
+  // Wait for auth state to load from localStorage before making any decisions
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen opacity-50">
@@ -28,14 +36,13 @@ const ProtectedRoute = ({ children, roles }) => {
     )
   }
 
-  // Not logged in → redirect to login, preserve intended URL
+  // Not logged in → redirect to login, preserve intended URL via state
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  // Role check (if roles prop provided)
+  // Optional role check (if roles prop provided)
   if (roles && !hasRole(roles)) {
-    // Show an access denied placeholder (or redirect to /unauthorized)
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <h2 className="text-2xl font-bold text-slate-800">Access Denied</h2>
@@ -44,6 +51,7 @@ const ProtectedRoute = ({ children, roles }) => {
     )
   }
 
+  // Render children (which may include nested <Outlet /> from MainLayout)
   return children
 }
 

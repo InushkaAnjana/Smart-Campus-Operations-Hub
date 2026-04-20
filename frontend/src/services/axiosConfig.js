@@ -7,15 +7,22 @@
  * This is the BASE axios instance used by all service files.
  * All API calls MUST go through this instance — not raw axios.
  *
- * TODO Member 1:
- *  - JWT token is auto-attached via request interceptor
- *  - 401 responses auto-redirect to /login
- *  - Update BASE_URL for production deployment
+ * JWT token is auto-attached via request interceptor.
+ * 401 responses auto-redirect to /login.
+ *
+ * IMPORTANT: BASE_URL is set to '' (empty string) so that all requests
+ * go through the Vite dev proxy (vite.config.js). The proxy forwards
+ * /api/* to http://localhost:9090. This avoids CORS issues entirely
+ * during development since the browser sees all requests as same-origin.
+ *
+ * For production, set VITE_API_URL to your deployed backend URL.
  * ================================================================
  */
 import axios from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:9090'
+// In development: empty string → Vite proxy handles routing to http://localhost:9090
+// In production: set VITE_API_URL env var to the deployed backend URL
+const BASE_URL = import.meta.env.VITE_API_URL || ''
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,

@@ -7,18 +7,16 @@
  * Route map:
  *   /              → redirect to /dashboard
  *   /login         → LoginPage (public)
- *   /register      → RegisterPage (public) - TODO: Member 1
+ *   /register      → RegisterPage (public)
+ *   /oauth/callback → OAuthCallback (public — handles Google redirect)
  *   /dashboard     → DashboardPage (protected)
  *   /resources     → ResourcesPage (protected) - Member 3
- *   /bookings      → BookingsPage (protected)  - Member 2
+ *   /bookings      → BookingPage (protected)  - Member 2
  *   /tickets       → TicketsPage (protected)   - Member 4
+ *   /tickets/my    → MyTickets (protected)
+ *   /tickets/:id   → TicketDetails (protected)
  *   /notifications → NotificationsPage (protected) - Member 4
- *   *              → 404 NotFoundPage
- *
- * TODO Member 1:
- *  - Add /register route
- *  - Add admin-only routes under /admin/*
- *  - Add 404 NotFound page
+ *   *              → redirect to /dashboard
  * ================================================================
  */
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -59,12 +57,15 @@ const App = () => {
           {/* ---- Public Routes ---- */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          {/* OAuthCallback must be public — it receives the token before auth is set */}
           <Route path="/oauth/callback" element={<OAuthCallback />} />
 
-          {/* ---- Normal Routes (temporarily unprotected) ---- */}
+          {/* ---- Protected Routes (require valid JWT) ---- */}
           <Route
             element={
-              <MainLayout />
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
             }
           >
             {/* Default: redirect / to /dashboard */}
@@ -86,17 +87,9 @@ const App = () => {
 
             {/* Notifications - Member 4 */}
             <Route path="/notifications" element={<NotificationsPage />} />
-
-            {/* TODO: Member 1 - Add admin routes
-            <Route path="/admin/users" element={
-              <ProtectedRoute roles={['ADMIN']}>
-                <AdminUsersPage />
-              </ProtectedRoute>
-            } /> */}
           </Route>
 
           {/* ---- 404 catch-all ---- */}
-          {/* TODO: Member 1 - Create a proper NotFoundPage */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </AuthProvider>
