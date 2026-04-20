@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { MdSchool, MdEmail, MdLock, MdVisibility, MdVisibilityOff, MdCheckCircle } from 'react-icons/md'
 import { useAuth } from '../../context/AuthContext'
+import campusBg from '../../assets/smart_campus_bg.png'
 
 const FEATURES = [
   'Facility Booking & Reservations',
@@ -41,10 +42,13 @@ const LoginPage = () => {
   return (
     <div className="flex min-h-screen font-sans">
       {/* ── Left Brand Panel ── */}
-      <div className="hidden lg:flex flex-col justify-center flex-1 bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#4338ca] px-16 py-12 relative overflow-hidden">
-        {/* Background blobs */}
-        <div className="absolute top-[-80px] left-[-80px] w-[360px] h-[360px] rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-[-60px] right-[-60px] w-[280px] h-[280px] rounded-full bg-purple-600/20 blur-3xl pointer-events-none" />
+      <div 
+        className="hidden lg:flex flex-col justify-center flex-1 px-16 py-12 relative overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: `url(${campusBg})` }}
+      >
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-indigo-950/70" />
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/80 via-transparent to-indigo-900/80" />
 
         <div className="relative z-10 max-w-md">
           {/* Logo */}
