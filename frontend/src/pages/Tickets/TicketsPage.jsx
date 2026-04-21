@@ -42,7 +42,11 @@ const TicketsPage = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Maintenance Hub</h1>
-          <p className="text-gray-500 text-sm">Overview of all active campus incidents and maintenance requests.</p>
+          <p className="text-gray-500 text-sm">
+            {isAdmin 
+              ? "Overview of all active campus incidents and maintenance requests."
+              : "Overview of your maintenance requests and incident reports."}
+          </p>
         </div>
         
         <div className="flex items-center gap-3">
