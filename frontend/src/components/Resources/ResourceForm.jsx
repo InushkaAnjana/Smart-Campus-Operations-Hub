@@ -42,7 +42,8 @@ const EMPTY_FORM = {
   capacity: '',
   status: 'ACTIVE',
   isAvailable: true,
-  availabilityWindows: '',   // stored as comma-separated string, converted to array on submit
+  availabilityStart: '',
+  availabilityEnd: '',
 }
 
 const ResourceForm = ({ resource, onClose, onSaved }) => {
@@ -55,6 +56,17 @@ const ResourceForm = ({ resource, onClose, onSaved }) => {
   // Pre-fill form when editing an existing resource
   useEffect(() => {
     if (resource) {
+      // Parse the stored "start to end" string if it exists
+      let start = ''
+      let end = ''
+      if (resource.availabilityWindows && resource.availabilityWindows.length > 0) {
+        const parts = resource.availabilityWindows[0].split(' to ')
+        if (parts.length === 2) {
+          start = parts[0]
+          end = parts[1]
+        }
+      }
+
       setForm({
         name:                resource.name        || '',
         type:                resource.type        || '',
@@ -63,7 +75,8 @@ const ResourceForm = ({ resource, onClose, onSaved }) => {
         capacity:            resource.capacity    || '',
         status:              resource.status      || 'ACTIVE',
         isAvailable:         resource.isAvailable ?? true,
-        availabilityWindows: (resource.availabilityWindows || []).join(', '),
+        availabilityStart:   start,
+        availabilityEnd:     end,
       })
     } else {
       setForm(EMPTY_FORM)
@@ -85,6 +98,12 @@ const ResourceForm = ({ resource, onClose, onSaved }) => {
     if (!form.type)                 e.type     = 'Please select a resource type.'
     if (!form.capacity || Number(form.capacity) <= 0)
                                     e.capacity = 'Capacity must be a positive number.'
+    if ((form.availabilityStart && !form.availabilityEnd) || (!form.availabilityStart && form.availabilityEnd)) {
+      e.availability = 'Both start and end times must be selected.'
+    }
+    if (form.availabilityStart && form.availabilityEnd && new Date(form.availabilityStart) >= new Date(form.availabilityEnd)) {
+      e.availability = 'End time must be after start time.'
+    }
     return e
   }
 
@@ -99,7 +118,12 @@ const ResourceForm = ({ resource, onClose, onSaved }) => {
       return
     }
 
-    // Build payload — convert CSV windows string to array
+    // Build payload — combine start and end into a single string inside availabilityWindows list
+    const availabilityWindowsArr = []
+    if (form.availabilityStart && form.availabilityEnd) {
+      availabilityWindowsArr.push(`${form.availabilityStart} to ${form.availabilityEnd}`)
+    }
+
     const payload = {
       name:     form.name.trim(),
       type:     form.type,
@@ -108,12 +132,7 @@ const ResourceForm = ({ resource, onClose, onSaved }) => {
       isAvailable: form.isAvailable,
       ...(form.description.trim() && { description: form.description.trim() }),
       ...(form.location.trim()    && { location:    form.location.trim() }),
-      ...(form.availabilityWindows.trim() && {
-        availabilityWindows: form.availabilityWindows
-          .split(',')
-          .map(w => w.trim())
-          .filter(Boolean),
-      }),
+      ...(availabilityWindowsArr.length > 0 && { availabilityWindows: availabilityWindowsArr }),
     }
 
     try {
@@ -275,21 +294,30 @@ const ResourceForm = ({ resource, onClose, onSaved }) => {
             </div>
           </div>
 
-          {/* Availability Windows */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">
-              Availability Windows
-              <span className="ml-1 font-normal text-slate-400">(comma-separated, e.g. MON 08:00-20:00)</span>
-            </label>
-            <input
-              id="form-resource-windows"
-              type="text"
-              value={form.availabilityWindows}
-              onChange={e => handleChange('availabilityWindows', e.target.value)}
-              placeholder="MON 08:00-20:00, WED 08:00-18:00"
-              className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-            />
+          {/* Availability Start & End — 2 cols */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Availability Start</label>
+              <input
+                id="form-resource-start"
+                type="datetime-local"
+                value={form.availabilityStart}
+                onChange={e => handleChange('availabilityStart', e.target.value)}
+                className={`w-full px-3 py-2.5 text-sm border rounded-xl bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${errors.availability ? 'border-red-400 focus:ring-red-500' : 'border-slate-200'}`}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Availability End</label>
+              <input
+                id="form-resource-end"
+                type="datetime-local"
+                value={form.availabilityEnd}
+                onChange={e => handleChange('availabilityEnd', e.target.value)}
+                className={`w-full px-3 py-2.5 text-sm border rounded-xl bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${errors.availability ? 'border-red-400 focus:ring-red-500' : 'border-slate-200'}`}
+              />
+            </div>
           </div>
+          {errors.availability && <p className="text-xs text-red-500 mt-1">{errors.availability}</p>}
 
           {/* Description */}
           <div>
