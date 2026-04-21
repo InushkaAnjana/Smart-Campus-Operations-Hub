@@ -30,6 +30,7 @@ import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute'
 import MainLayout from './components/MainLayout/MainLayout'
 
 // Pages
+import LandingPage      from './pages/Landing/LandingPage'
 import LoginPage        from './pages/Login/LoginPage'
 import RegisterPage     from './pages/Register/RegisterPage'
 import DashboardPage    from './pages/Dashboard/DashboardPage'
@@ -56,6 +57,7 @@ const App = () => {
 
         <Routes>
           {/* ---- Public Routes ---- */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
 
           {/* Member 1 - Add register page */}
@@ -67,9 +69,6 @@ const App = () => {
               <MainLayout />
             }
           >
-            {/* Default: redirect / to /dashboard */}
-            <Route index element={<Navigate to="/dashboard" replace />} />
-
             {/* Dashboard - Member 1 */}
             <Route path="/dashboard" element={<DashboardPage />} />
 
