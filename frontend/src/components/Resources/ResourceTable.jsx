@@ -21,7 +21,7 @@
  *   - Empty state with an illustration message
  * ================================================================
  */
-import { MdEdit, MdDelete, MdMeetingRoom, MdScience, MdComputer, MdLocationOn, MdPeople } from 'react-icons/md'
+import { MdEdit, MdDelete, MdMeetingRoom, MdScience, MdComputer, MdLocationOn, MdPeople, MdCalendarToday } from 'react-icons/md'
 import StatusBadge from './StatusBadge'
 
 const TYPE_CONFIG = {
@@ -64,6 +64,9 @@ const ResourceTable = ({ resources = [], isAdmin, onEdit, onDelete, loading }) =
               </th>
               <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 <span className="flex items-center gap-1"><MdLocationOn className="text-base" /> Location</span>
+              </th>
+              <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                <span className="flex items-center gap-1"><MdCalendarToday className="text-base" /> Availability</span>
               </th>
               <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
               {isAdmin && (
@@ -109,6 +112,33 @@ const ResourceTable = ({ resources = [], isAdmin, onEdit, onDelete, loading }) =
                     <span className="text-slate-600 text-xs">
                       {resource.location || <span className="text-slate-400 italic">Not specified</span>}
                     </span>
+                  </td>
+
+                  {/* Availability */}
+                  <td className="px-5 py-4">
+                    {resource.availabilityWindows && resource.availabilityWindows.length > 0 ? (
+                      <div className="flex flex-col gap-1.5">
+                        {resource.availabilityWindows.map((win, idx) => {
+                          const parts = win.split(' to ')
+                          if (parts.length === 2) {
+                            return (
+                              <div key={idx} className="flex items-center text-xs whitespace-nowrap bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 w-max">
+                                <div className="flex items-center gap-1.5 font-medium text-emerald-600 pr-2 border-r border-slate-200">
+                                  {new Date(parts[0]).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                </div>
+                                <div className="flex items-center gap-1.5 font-medium text-rose-600 pl-2">
+                                  {new Date(parts[1]).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                </div>
+                              </div>
+                            )
+                          }
+                          // Fallback for old comma-separated strings
+                          return <span key={idx} className="text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 inline-block">{win}</span>
+                        })}
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 italic text-xs">Not set</span>
+                    )}
                   </td>
 
                   {/* Status */}
