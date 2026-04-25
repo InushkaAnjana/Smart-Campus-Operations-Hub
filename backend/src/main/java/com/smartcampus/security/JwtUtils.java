@@ -98,6 +98,24 @@ public class JwtUtils {
     }
 
     /**
+     * Extracts the username (email) from a JWT token.
+     *
+     * The email is stored as the JWT subject ('sub' standard claim).
+     * This method is called by JwtAuthFilter to identify the authenticated user.
+     *
+     * @param token The compact JWT string
+     * @return The email address (username) embedded in the token
+     */
+    public String getUsernameFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
+
+    /**
      * Extracts the 'userId' custom claim from a validated JWT token.
      */
     public String getUserIdFromToken(String token) {
