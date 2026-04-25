@@ -183,10 +183,10 @@ public class BookingServiceImpl implements BookingService {
      *   Only PENDING → APPROVED is valid.
      *   Any other current status → throw INVALID_STATUS_TRANSITION.
      *
-     * CONFLICT DETECTION (runs HERE for overlap, not only at create time):
-     *   Queries for APPROVED bookings on the same resource whose
-     *   time window overlaps with the booking being approved.
-     *   Formula: existingStart < newEnd  AND  existingEnd > newStart
+     * NOTE ON CONFLICT DETECTION:
+     *   Duplicate/overlap prevention is enforced at CREATION TIME via
+     *   findDuplicateActiveBookings(). Admins can therefore always approve
+     *   any PENDING booking without a secondary conflict check here.
      *
      * Transition: PENDING → APPROVED
      */
@@ -205,44 +205,6 @@ public class BookingServiceImpl implements BookingService {
             throw BookingException.invalidTransition(booking.getStatus().name(), "APPROVED");
         }
 
-        // ── CONFLICT DETECTION ─────────────────────────────────
-        // Find any APPROVED booking for the same resource whose time window
-        // overlaps with [booking.startTime, booking.endTime].
-        //
-        // Overlap condition:
-        //   existingStart < booking.endTime   (existing starts before new ends)
-        //   existingEnd   > booking.startTime (existing ends after new starts)
-        //
-        // We pass "NONE" as excludeId because this is not a self-edit scenario.
-        List<Booking> conflicts = bookingRepository.findOverlappingApprovedBookings(
-                booking.getResourceId(),
-                booking.getStartTime(),
-                booking.getEndTime(),
-                "NONE"  // Do not exclude any specific booking — find ALL conflicts
-        );
-
-        if (!conflicts.isEmpty()) {
-            // Build a helpful error message with the first conflicting slot details
-            Booking conflict = conflicts.get(0);
-            Resource resource = resourceRepository.findById(booking.getResourceId()).orElse(null);
-            String resourceName = resource != null ? resource.getName() : booking.getResourceId();
-
-            log.warn("Booking conflict detected: resourceId={} requestedStart={} requestedEnd={}",
-                    booking.getResourceId(), booking.getStartTime(), booking.getEndTime());
-
-            throw new BookingException(
-                String.format(
-                    "Cannot approve: Resource '%s' is already booked from %s to %s. " +
-                    "Please choose a different time slot.",
-                    resourceName,
-                    conflict.getStartTime(),
-                    conflict.getEndTime()
-                ),
-                "BOOKING_CONFLICT"
-            );
-        }
-        // ── END CONFLICT DETECTION ─────────────────────────────
-
         // ── TRANSITION → APPROVED ──────────────────────────────
         booking.setStatus(BookingStatus.APPROVED);
         booking.setAdminNote(adminNote);
@@ -255,7 +217,7 @@ public class BookingServiceImpl implements BookingService {
         User user = findUserById(booking.getUserId());
         Resource resource = findResourceById(booking.getResourceId());
 
-        // ── CASE 2: Notify the booking owner that their request was approved ──
+        // ── Notify the booking owner that their request was approved ──
         notificationService.sendNotification(
             user.getId(),
             "Booking Approved",
