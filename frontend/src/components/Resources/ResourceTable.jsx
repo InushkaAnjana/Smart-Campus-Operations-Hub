@@ -30,7 +30,7 @@ const TYPE_CONFIG = {
   EQUIPMENT: { label: 'Equipment',    color: 'text-amber-600  bg-amber-50   border-amber-200',  icon: MdComputer },
 }
 
-const ResourceTable = ({ resources = [], isAdmin, onEdit, onDelete, loading }) => {
+const ResourceTable = ({ resources = [], isAdmin, onEdit, onDelete, loading, onCardClick }) => {
 
   if (loading) {
     return (
@@ -86,12 +86,18 @@ const ResourceTable = ({ resources = [], isAdmin, onEdit, onDelete, loading }) =
                   key={resource.id}
                   className="hover:bg-slate-50/70 transition-colors group"
                 >
-                  {/* Name + description */}
+                  {/* Name + description — click to open detail modal */}
                   <td className="px-5 py-4 max-w-[200px]">
-                    <div className="font-semibold text-slate-800 truncate">{resource.name}</div>
-                    {resource.description && (
-                      <div className="text-xs text-slate-400 truncate mt-0.5">{resource.description}</div>
-                    )}
+                    <button
+                      onClick={() => onCardClick && onCardClick(resource)}
+                      className="text-left group/name w-full"
+                      title="View details"
+                    >
+                      <div className="font-semibold text-slate-800 truncate group-hover/name:text-indigo-600 transition-colors">{resource.name}</div>
+                      {resource.description && (
+                        <div className="text-xs text-slate-400 truncate mt-0.5">{resource.description}</div>
+                      )}
+                    </button>
                   </td>
 
                   {/* Type badge */}
