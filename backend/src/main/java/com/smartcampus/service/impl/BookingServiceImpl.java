@@ -28,29 +28,36 @@ import java.util.stream.Collectors;
  *
  * KEY DESIGN DECISIONS:
  *
- *  1. CONFLICT DETECTION happens at APPROVAL time, not at create time.
- *     Rationale: Multiple users can submit PENDING requests for the same
- *     slot simultaneously. Checking at create time would still leave a
- *     race window between two PENDING records. Checking at approval time
- *     ensures exactly one APPROVED booking occupies any time slot.
+ *  1. DUPLICATE CHECK at CREATION TIME (exact match):
+ *     If any PENDING or APPROVED booking exists for the same resource
+ *     with the exact same startTime AND endTime, the new booking is
+ *     immediately rejected with BOOKING_CONFLICT (HTTP 409).
+ *     This gives instant user feedback and prevents duplicate submissions.
  *
- *  2. ONLY APPROVED bookings block a slot.
- *     PENDING / REJECTED / CANCELLED bookings do not count as conflicts.
- *     This allows a "first-come, first-served on approval" policy.
+ *  2. BROAD OVERLAP CONFLICT DETECTION at APPROVAL TIME:
+ *     Queries for APPROVED bookings on the same resource whose time
+ *     window overlaps (Allen's interval algebra) with the booking being
+ *     approved. This ensures no two APPROVED bookings ever share any
+ *     overlapping time on the same resource.
  *
- *  3. OVERLAP FORMULA (Allen's interval algebra):
+ *  3. ONLY APPROVED bookings block a slot during approval.
+ *     PENDING / REJECTED / CANCELLED bookings do not count as conflicts
+ *     for the approval-time overlap check (PENDING entries are only
+ *     blocked at create time for exact duplicate prevention).
+ *
+ *  4. OVERLAP FORMULA (Allen's interval algebra):
  *     Two intervals [A_start, A_end] and [B_start, B_end] overlap iff:
  *       A_start < B_end  AND  A_end > B_start
  *     MongoDB query: startTime { $lt: newEnd }, endTime { $gt: newStart }
  *
- *  4. ROLE ENFORCEMENT is done in the service layer for testability —
+ *  5. ROLE ENFORCEMENT is done in the service layer for testability —
  *     enforced independently of HTTP (so unit tests don't need MockMvc).
  *
- *  5. SOFT DELETE preserves audit trail:
+ *  6. SOFT DELETE preserves audit trail:
  *     Status is set to DELETED and deletedAt is recorded.
  *     Physically deleted documents cannot be recovered or audited.
  *
- *  6. FILTERING is applied in the service layer using specific repository
+ *  7. FILTERING is applied in the service layer using specific repository
  *     derived queries. When no filter is active, findAll() is used.
  *     DELETED bookings are always excluded from normal listings.
  * ================================================================
@@ -71,13 +78,15 @@ public class BookingServiceImpl implements BookingService {
 
     /**
      * Creates a PENDING booking after basic validation.
-     * Conflict check intentionally deferred to approval time.
+     * Also runs a creation-time duplicate check to block exact-same
+     * resource + startTime + endTime bookings immediately.
      *
      * Validations performed here:
      *   ✔ startTime < endTime (cross-field, must be done in service)
      *   ✔ booking duration ≥ 15 minutes
      *   ✔ attendeeCount ≥ 1 (also enforced by @Min on DTO)
      *   ✔ resource exists and is currently available
+     *   ✔ no active (PENDING or APPROVED) booking for same resource/time
      */
     @Override
     public BookingDTO.BookingResponse createBooking(String userId, BookingDTO.BookingRequest request) {
@@ -105,6 +114,32 @@ public class BookingServiceImpl implements BookingService {
                 "RESOURCE_UNAVAILABLE"
             );
         }
+
+        // ── DUPLICATE / CONFLICT CHECK AT CREATION TIME ────────────────────
+        //
+        // Reject immediately if any active (PENDING or APPROVED) booking exists
+        // for the same resource with the exact same startTime AND endTime.
+        //
+        // Rationale:
+        //   The requirement specifies that only ONE booking per resource is
+        //   allowed for the same time period. Checking at create time gives
+        //   instant feedback rather than making users wait for admin approval
+        //   to discover the conflict.
+        List<Booking> duplicates = bookingRepository.findDuplicateActiveBookings(
+                resource.getId(),
+                request.getStartTime(),
+                request.getEndTime()
+        );
+
+        if (!duplicates.isEmpty()) {
+            log.warn("Duplicate booking rejected: resourceId={} start={} end={}",
+                    resource.getId(), request.getStartTime(), request.getEndTime());
+            throw new BookingException(
+                "Cannot complete booking: This resource is already booked for the selected dates.",
+                "BOOKING_CONFLICT"
+            );
+        }
+        // ── END DUPLICATE CHECK ──────────────────────────────────────────
 
         // ── PERSIST ────────────────────────────────────────────
 
@@ -148,7 +183,7 @@ public class BookingServiceImpl implements BookingService {
      *   Only PENDING → APPROVED is valid.
      *   Any other current status → throw INVALID_STATUS_TRANSITION.
      *
-     * CONFLICT DETECTION (runs HERE, not at create time):
+     * CONFLICT DETECTION (runs HERE for overlap, not only at create time):
      *   Queries for APPROVED bookings on the same resource whose
      *   time window overlaps with the booking being approved.
      *   Formula: existingStart < newEnd  AND  existingEnd > newStart

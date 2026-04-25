@@ -88,7 +88,7 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
      */
     List<Booking> findByUserIdAndStartTimeBetween(String userId, LocalDateTime from, LocalDateTime to);
 
-    // ─── Conflict Detection ────────────────────────────────────
+    // ─── Conflict Detection ────────────────────────────────────────────
 
     /**
      * Find APPROVED bookings for a resource whose time window overlaps
@@ -119,5 +119,34 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
             LocalDateTime newStart,
             LocalDateTime newEnd,
             String excludeId
+    );
+
+    /**
+     * Duplicate booking check run at CREATION TIME.
+     *
+     * Finds any PENDING or APPROVED booking for the same resource that has
+     * the EXACT same startTime and endTime as the one being requested.
+     *
+     * WHY exact match (not overlap)?
+     *   The business rule in the requirements specifies that a booking must
+     *   be rejected when another booking exists with the same resource,
+     *   same start date and same end date — preventing duplicate submissions.
+     *   Broad overlap prevention at create time is handled at approval time.
+     *
+     * WHY include PENDING?
+     *   Including PENDING prevents two users from submitting the identical
+     *   request simultaneously, avoiding a queue of duplicate pending items.
+     *
+     * @param resourceId  ID of the resource being requested
+     * @param startTime   Requested booking start datetime
+     * @param endTime     Requested booking end datetime
+     */
+    @Query("{ 'resourceId': ?0, " +
+           "'status': { $in: ['PENDING', 'APPROVED'] }, " +
+           "'startTime': ?1, 'endTime': ?2 }")
+    List<Booking> findDuplicateActiveBookings(
+            String resourceId,
+            LocalDateTime startTime,
+            LocalDateTime endTime
     );
 }
