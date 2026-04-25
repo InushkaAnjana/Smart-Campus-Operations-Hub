@@ -63,13 +63,13 @@ const BookingForm = ({ onSuccess, onCancel }) => {
     setConflictMsg('')
   }
 
-  // ── Client-side validation ────────────────────────────────────
+  // ── Client-side validation ────────────────────────────────────────────
   const validate = () => {
     const errs = {}
-    if (!form.resourceId)    errs.resourceId    = 'Please select a resource.'
-    if (!form.startTime)     errs.startTime     = 'Start time is required.'
-    if (!form.endTime)       errs.endTime       = 'End time is required.'
-    if (!form.purpose.trim()) errs.purpose      = 'Purpose is required.'
+    if (!form.resourceId)     errs.resourceId    = 'Please select a resource.'
+    if (!form.startTime)      errs.startTime     = 'Start time is required.'
+    if (!form.endTime)        errs.endTime       = 'End time is required.'
+    if (!form.purpose.trim()) errs.purpose       = 'Purpose is required.'
     if (form.attendeeCount < 1) errs.attendeeCount = 'At least 1 attendee required.'
 
     if (form.startTime && form.endTime) {
@@ -111,7 +111,10 @@ const BookingForm = ({ onSuccess, onCancel }) => {
       const code = err?.errorCode || err?.error
       const msg  = err?.message   || 'Failed to create booking.'
 
-      if (code === 'BOOKING_CONFLICT' || code === 'RESOURCE_UNAVAILABLE') {
+      if (code === 'BOOKING_CONFLICT') {
+        // Always show the exact required conflict message for duplicate bookings
+        setConflictMsg('Cannot complete booking: This resource is already booked for the selected dates.')
+      } else if (code === 'RESOURCE_UNAVAILABLE') {
         setConflictMsg(msg)
       } else {
         toast.error(msg)
@@ -132,9 +135,16 @@ const BookingForm = ({ onSuccess, onCancel }) => {
 
       {/* ── Conflict / availability error banner ── */}
       {conflictMsg && (
-        <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
-          <span className="shrink-0 text-lg">⚠</span>
-          <span>{conflictMsg}</span>
+        <div
+          id="booking-conflict-banner"
+          role="alert"
+          className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-red-50 border-2 border-red-300 text-red-800 text-sm animate-[fadeInAnim_0.2s_ease]"
+        >
+          <span className="shrink-0 text-xl leading-none mt-0.5">🚫</span>
+          <div>
+            <p className="font-semibold mb-0.5">Booking Conflict</p>
+            <p>{conflictMsg}</p>
+          </div>
         </div>
       )}
 
