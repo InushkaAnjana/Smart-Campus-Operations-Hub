@@ -38,6 +38,7 @@ import TicketsPage      from './pages/Tickets/TicketsPage'
 import MyTickets        from './pages/Tickets/MyTickets'
 import TicketDetails    from './pages/Tickets/TicketDetails'
 import NotificationsPage from './pages/Notifications/NotificationsPage'
+import UsersPage         from './pages/Users/UsersPage'
 
 const App = () => {
   return (
@@ -87,6 +88,9 @@ const App = () => {
 
             {/* Notifications - Member 4 */}
             <Route path="/notifications" element={<NotificationsPage />} />
+
+            {/* User Management - Admin Only */}
+            <Route path="/users" element={<UsersPage />} />
           </Route>
 
           {/* ---- 404 catch-all ---- */}

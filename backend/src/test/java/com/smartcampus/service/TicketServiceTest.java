@@ -31,6 +31,9 @@ public class TicketServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private NotificationService notificationService;
+
     @InjectMocks
     private TicketServiceImpl ticketService;
 
