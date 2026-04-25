@@ -5,51 +5,39 @@
  * Owner: Member 3 - Facilities & Resources Module
  * Route: /resources
  *
- * ARCHITECTURE:
- *   This page is the single source of truth for:
- *     - resource list (fetched from backend via resourceService)
- *     - filter state (type, capacity, location, status)
- *     - modal state (open/close, which resource is being edited)
- *     - delete confirmation state
+ * VIEW MODES:
+ *   Cards (default) — responsive grid, click card → Detail Modal
+ *   Table           — admin-friendly table with Edit/Delete actions
+ *   Toggle is shown top-right; default is Cards for all users.
  *
  * ROLE-BASED UI:
- *   - isAdmin  → shows "Add Resource" button + ResourceForm modal
- *               + Edit/Delete buttons in ResourceTable
- *   - USER     → read-only view of resources and filters
- *
- * FILTERING FLOW:
- *   1. User changes filter controls in ResourceFilters → updates `filters` state
- *   2. User clicks "Apply Filters" → handleApplyFilters() is called
- *   3. handleApplyFilters() calls resourceService.getResources(filters)
- *      with the current filter object → returns matching resources from backend
- *   4. ResourceTable re-renders with the filtered results
- *   5. "Reset" clears filters and re-fetches the full list
- *
- * STATS BAR:
- *   Shows aggregate counts (Total / Active / Out Of Service / Available)
- *   computed from the current filtered result for quick reference.
+ *   ADMIN → view toggle + Add Resource button + Edit/Delete in Table
+ *   USER  → Cards view only (read-only), click card for details
  * ================================================================
  */
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'react-toastify'
 import {
   MdAdd, MdMeetingRoom, MdCheckCircle,
-  MdCancel, MdCalendarToday, MdRefresh
+  MdCancel, MdCalendarToday, MdRefresh,
+  MdGridView, MdTableRows
 } from 'react-icons/md'
 
-import { useAuth } from '../../context/AuthContext'
-import { resourceService } from '../../services/resourceService'
+import { useAuth }           from '../../context/AuthContext'
+import { resourceService }   from '../../services/resourceService'
 
-import ResourceFilters from '../../components/Resources/ResourceFilters'
-import ResourceTable   from '../../components/Resources/ResourceTable'
-import ResourceForm    from '../../components/Resources/ResourceForm'
+import ResourceFilters      from '../../components/Resources/ResourceFilters'
+import ResourceTable        from '../../components/Resources/ResourceTable'
+import ResourceForm         from '../../components/Resources/ResourceForm'
+import ResourceCards        from '../../components/Resources/ResourceCards'
+import ResourceDetailModal  from '../../components/Resources/ResourceDetailModal'
 
 // ── Default empty filter state ────────────────────────────────────
 const EMPTY_FILTERS = { type: '', capacity: '', location: '', status: '' }
 
 // ── Stat tile component ───────────────────────────────────────────
 const StatTile = ({ icon: Icon, label, value, accent }) => (
-  <div className={`flex items-center gap-3 bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4`}>
+  <div className="flex items-center gap-3 bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
     <div className={`flex items-center justify-center w-10 h-10 rounded-xl text-xl ${accent}`}>
       <Icon />
     </div>
@@ -107,31 +95,29 @@ const DeleteConfirmModal = ({ resourceName, onConfirm, onCancel, deleting }) => 
 const ResourcesPage = () => {
   const { isAdmin } = useAuth()
 
+  // ── View mode: 'cards' | 'table' ─────────────────────────────────
+  // Default to cards; admins can toggle to table for CRUD actions
+  const [viewMode, setViewMode] = useState('cards')
+
   // ── State ────────────────────────────────────────────────────────
   const [resources, setResources] = useState([])
   const [loading, setLoading]     = useState(true)
   const [fetchError, setFetchError] = useState(null)
 
-  const [filters, setFilters]     = useState(EMPTY_FILTERS)
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
 
-  // Modal for create/edit
-  const [formOpen, setFormOpen]         = useState(false)
-  const [editingResource, setEditingResource] = useState(null) // null = create, object = edit
+  // Modal: create / edit form (ADMIN)
+  const [formOpen, setFormOpen]               = useState(false)
+  const [editingResource, setEditingResource] = useState(null)
 
-  // Delete confirmation
-  const [deleteTarget, setDeleteTarget] = useState(null) // { id, name }
+  // Modal: detail view (all users)
+  const [detailResource, setDetailResource] = useState(null)
+
+  // Modal: delete confirmation (ADMIN)
+  const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting]         = useState(false)
 
   // ── Data fetching ─────────────────────────────────────────────────
-  /**
-   * Fetches resources from the backend.
-   * @param {Object} activeFilters  filter params to include in the request
-   *
-   * FILTERING LOGIC:
-   *   resourceService.getResources(activeFilters) strips null/empty values
-   *   and builds a query string. The backend handles the filtering at the
-   *   MongoDB layer (not in JS) for performance.
-   */
   const fetchResources = useCallback(async (activeFilters = {}) => {
     setLoading(true)
     setFetchError(null)
@@ -146,21 +132,16 @@ const ResourcesPage = () => {
     }
   }, [])
 
-  // Load on mount with no filters
   useEffect(() => { fetchResources() }, [fetchResources])
 
   // ── Filter handlers ───────────────────────────────────────────────
-  const handleApplyFilters = () => {
-    // Triggered when user clicks "Apply Filters" in ResourceFilters
-    fetchResources(filters)
-  }
-
+  const handleApplyFilters = () => fetchResources(filters)
   const handleResetFilters = () => {
     setFilters(EMPTY_FILTERS)
-    fetchResources({}) // re-fetch with no filters
+    fetchResources({})
   }
 
-  // ── CRUD handlers ─────────────────────────────────────────────────
+  // ── CRUD handlers (ADMIN) ─────────────────────────────────────────
   const handleOpenCreate = () => {
     setEditingResource(null)
     setFormOpen(true)
@@ -171,15 +152,9 @@ const ResourcesPage = () => {
     setFormOpen(true)
   }
 
-  const handleFormSaved = () => {
-    // Refresh after successful create/update (keep current filters)
-    fetchResources(filters)
-  }
+  const handleFormSaved = () => fetchResources(filters)
 
-  const handleDeleteRequest = (id, name) => {
-    // Show confirmation modal
-    setDeleteTarget({ id, name })
-  }
+  const handleDeleteRequest = (id, name) => setDeleteTarget({ id, name })
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return
@@ -217,7 +192,8 @@ const ResourcesPage = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Refresh button */}
+
+          {/* Refresh */}
           <button
             id="refresh-resources-btn"
             onClick={() => fetchResources(filters)}
@@ -226,7 +202,38 @@ const ResourcesPage = () => {
           >
             <MdRefresh className="text-xl" />
           </button>
-          {/* ADMIN: Add Resource button */}
+
+          {/* View toggle (Cards / Table) — ADMIN only sees table option */}
+          {isAdmin && (
+            <div className="flex items-center bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+              <button
+                id="view-cards-btn"
+                title="Card view"
+                onClick={() => setViewMode('cards')}
+                className={`flex items-center justify-center w-9 h-9 transition-colors ${
+                  viewMode === 'cards'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-500 hover:text-indigo-600'
+                }`}
+              >
+                <MdGridView className="text-lg" />
+              </button>
+              <button
+                id="view-table-btn"
+                title="Table view"
+                onClick={() => setViewMode('table')}
+                className={`flex items-center justify-center w-9 h-9 transition-colors ${
+                  viewMode === 'table'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-500 hover:text-indigo-600'
+                }`}
+              >
+                <MdTableRows className="text-lg" />
+              </button>
+            </div>
+          )}
+
+          {/* ADMIN: Add Resource */}
           {isAdmin && (
             <button
               id="add-resource-btn"
@@ -262,16 +269,45 @@ const ResourcesPage = () => {
         </div>
       )}
 
-      {/* ── Resource Table ─────────────────────────────────────── */}
-      <ResourceTable
-        resources={resources}
-        isAdmin={isAdmin}
-        loading={loading}
-        onEdit={handleOpenEdit}
-        onDelete={handleDeleteRequest}
-      />
+      {/* ── Content: Cards (default) or Table (admin toggle) ───── */}
+      {viewMode === 'cards' || !isAdmin ? (
+        <>
+          {/* Section label */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-700">
+              {loading ? 'Loading…' : `${resources.length} Resource${resources.length !== 1 ? 's' : ''} Found`}
+            </h2>
+            {!isAdmin && (
+              <span className="text-xs text-slate-400 italic">Click a card to view details</span>
+            )}
+          </div>
 
-      {/* ── Create / Edit Form Modal ───────────────────────────── */}
+          <ResourceCards
+            resources={resources}
+            loading={loading}
+            onCardClick={(res) => setDetailResource(res)}
+          />
+        </>
+      ) : (
+        <ResourceTable
+          resources={resources}
+          isAdmin={isAdmin}
+          loading={loading}
+          onEdit={handleOpenEdit}
+          onDelete={handleDeleteRequest}
+          onCardClick={(res) => setDetailResource(res)}
+        />
+      )}
+
+      {/* ── Detail Modal (all users) ────────────────────────────── */}
+      {detailResource && (
+        <ResourceDetailModal
+          resource={detailResource}
+          onClose={() => setDetailResource(null)}
+        />
+      )}
+
+      {/* ── Create / Edit Form Modal (ADMIN) ────────────────────── */}
       {formOpen && (
         <ResourceForm
           resource={editingResource}
@@ -280,7 +316,7 @@ const ResourcesPage = () => {
         />
       )}
 
-      {/* ── Delete Confirmation Modal ──────────────────────────── */}
+      {/* ── Delete Confirmation Modal (ADMIN) ───────────────────── */}
       {deleteTarget && (
         <DeleteConfirmModal
           resourceName={deleteTarget.name}
