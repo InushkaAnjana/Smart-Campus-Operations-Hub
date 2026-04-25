@@ -2,6 +2,7 @@ package com.smartcampus.service.impl;
 
 import com.smartcampus.dto.CommentDTO;
 import com.smartcampus.dto.TicketRequestDTO;
+import com.smartcampus.dto.TicketUpdateDTO;
 import com.smartcampus.dto.TicketResponseDTO;
 import com.smartcampus.exception.ResourceNotFoundException;
 import com.smartcampus.exception.TicketException;
@@ -256,6 +257,32 @@ public class TicketServiceImpl implements TicketService {
         ticket.getComments().remove(commentIndex);
         ticket.onUpdate();
 
+        return mapToResponse(ticketRepository.save(ticket));
+    }
+
+    @Override
+    public TicketResponseDTO updateTicket(String id, TicketUpdateDTO updateDTO) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with id: " + id));
+
+        if (updateDTO.getCategory() != null && !updateDTO.getCategory().isBlank()) {
+            ticket.setCategory(updateDTO.getCategory());
+        }
+        if (updateDTO.getPriority() != null) {
+            ticket.setPriority(updateDTO.getPriority());
+        }
+        if (updateDTO.getStatus() != null) {
+            ticket.setStatus(updateDTO.getStatus());
+            if (updateDTO.getStatus() == TicketStatus.RESOLVED) {
+                ticket.setResolvedAt(LocalDateTime.now());
+            }
+        }
+        // Empty string means "unassign"
+        if (updateDTO.getAssignedToId() != null) {
+            ticket.setAssignedToId(updateDTO.getAssignedToId().isBlank() ? null : updateDTO.getAssignedToId());
+        }
+
+        ticket.onUpdate();
         return mapToResponse(ticketRepository.save(ticket));
     }
 

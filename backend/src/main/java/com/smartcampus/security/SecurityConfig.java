@@ -159,6 +159,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/me").authenticated()
                 .requestMatchers("/api/auth/users/**").hasRole("ADMIN")
 
+                // ── File serving: public so <img> tags load without a JWT ────
+                .requestMatchers(HttpMethod.GET, "/api/files/**").permitAll()
+
                 // ── Tickets: TECHNICIAN and ADMIN can update status ───
                 .requestMatchers(HttpMethod.PATCH, "/api/tickets/**")
                     .hasAnyRole("ADMIN", "TECHNICIAN")

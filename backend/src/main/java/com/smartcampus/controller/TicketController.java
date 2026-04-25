@@ -3,6 +3,7 @@ package com.smartcampus.controller;
 import com.smartcampus.dto.CommentDTO;
 import com.smartcampus.dto.TicketRequestDTO;
 import com.smartcampus.dto.TicketResponseDTO;
+import com.smartcampus.dto.TicketUpdateDTO;
 import com.smartcampus.model.Priority;
 import com.smartcampus.model.TicketStatus;
 import com.smartcampus.model.User;
@@ -67,6 +68,13 @@ public class TicketController {
     @GetMapping("/{id}")
     public ResponseEntity<TicketResponseDTO> getTicketById(@PathVariable String id) {
         return ResponseEntity.ok(ticketService.getTicketById(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<TicketResponseDTO> updateTicket(
+            @PathVariable String id,
+            @RequestBody TicketUpdateDTO updateDTO) {
+        return ResponseEntity.ok(ticketService.updateTicket(id, updateDTO));
     }
 
     @PutMapping("/{id}/status")

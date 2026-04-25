@@ -40,6 +40,9 @@ export const ticketService = {
   
   deleteComment: (id, index) => api.delete(`${BASE}/${id}/comment/${index}`).then(r => r.data),
 
+  // Update ticket fields (category, priority, status, assignedToId)
+  updateTicket: (id, payload) => api.put(`${BASE}/${id}`, payload).then(r => r.data),
+
   // Delete ticket
   deleteTicket: (id) => api.delete(`${BASE}/${id}`).then(r => r.data),
 }

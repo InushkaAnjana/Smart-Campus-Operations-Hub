@@ -110,8 +110,21 @@ const TicketDetails = () => {
                 <h4 className="font-bold text-gray-800 text-sm">Attachments</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {ticket.imageAttachments.map((img, i) => (
-                    <a key={i} href={`/uploads/tickets/${img}`} target="_blank" rel="noreferrer" className="rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:opacity-90 transition-opacity">
-                      <img src={`/api/files/download/${img}`} alt="ticket" className="w-full h-32 object-cover" />
+                    <a
+                      key={i}
+                      href={`/api/files/tickets/${img}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:opacity-90 transition-opacity block"
+                    >
+                      <img
+                        src={`/api/files/tickets/${img}`}
+                        alt={`Attachment ${i + 1}`}
+                        className="w-full h-32 object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
                     </a>
                   ))}
                 </div>
