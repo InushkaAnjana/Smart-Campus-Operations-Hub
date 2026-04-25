@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -12,7 +13,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -79,19 +79,18 @@ import java.util.List;
  * ── SESSION POLICY ─────────────────────────────────────────────
  *  STATELESS: No HTTP session is created. Every request must carry a valid JWT.
  *  This enables horizontal scaling and removes the need for session replication.
+ *
+ *  NOTE: OAuth2 login requires a brief session to store the OAuth state/code,
+ *  so we use IF_REQUIRED for the session around the OAuth2 flow only.
  * ================================================================
  */
-import org.springframework.context.annotation.Lazy;
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)  // Enables @PreAuthorize on controller methods
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
-    @Lazy
     private final GoogleOAuthSuccessHandler googleOAuthSuccessHandler;
     private final PasswordEncoder passwordEncoder;
 
@@ -99,12 +98,30 @@ public class SecurityConfig {
     private String allowedOrigins;
 
     /**
+     * Constructor injection with @Lazy on GoogleOAuthSuccessHandler to break
+     * the circular dependency:
+     *   SecurityConfig → GoogleOAuthSuccessHandler → JwtUtils (fine)
+     *   GoogleOAuthSuccessHandler is @Component and is injected here lazily
+     *   to avoid the circular initialization problem.
+     */
+    public SecurityConfig(
+            CustomUserDetailsService userDetailsService,
+            JwtAuthFilter jwtAuthFilter,
+            @Lazy GoogleOAuthSuccessHandler googleOAuthSuccessHandler,
+            PasswordEncoder passwordEncoder) {
+        this.userDetailsService = userDetailsService;
+        this.jwtAuthFilter = jwtAuthFilter;
+        this.googleOAuthSuccessHandler = googleOAuthSuccessHandler;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    /**
      * Main Security Filter Chain.
      *
      * Configures:
      *  - CORS (delegated to corsConfigurationSource())
      *  - CSRF disabled (stateless JWT — no cookie-based sessions)
-     *  - Session management: STATELESS (no HttpSession created)
+     *  - Session management: STATELESS for API; OAuth2 flow needs a transient session
      *  - URL-based authorization rules (see access matrix above)
      *  - JWT pre-authentication filter injected before UsernamePasswordAuthenticationFilter
      */
@@ -113,44 +130,44 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
+            // OAuth2 login requires a short-lived session to store the OAuth state param.
+            // We use IF_REQUIRED so that the stateless JWT flow still works for API
+            // requests, while the OAuth redirect dance can use a transient session.
             .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(auth -> auth
 
                 // ── Public endpoints (no JWT needed) ─────────────────
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()        // CORS preflight
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers("/api/auth/register").permitAll()
-                .requestMatchers("/api/auth/oauth/**").permitAll()             // OAuth placeholder
+                .requestMatchers("/api/auth/oauth/**").permitAll()             // OAuth placeholder REST
                 .requestMatchers("/actuator/**").permitAll()                   // Health/metrics (dev)
                 .requestMatchers("/h2-console/**").permitAll()                 // H2 console (dev only)
 
+                // ── OAuth2 redirect endpoints (handled by Spring Security internally) ─
+                .requestMatchers("/login/oauth2/**").permitAll()
+                .requestMatchers("/oauth2/**").permitAll()
+
                 // ── Resources: ADMIN writes, any auth user reads ──────
-                // Fine-grained per-method control via @PreAuthorize in ResourceController
                 .requestMatchers(HttpMethod.POST,   "/api/resources/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT,    "/api/resources/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/resources/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET,    "/api/resources/**").authenticated()
 
                 // ── Users (admin management) ─────────────────────────
-                // GET /api/auth/me is permitted to all authenticated users
-                // GET/DELETE /api/auth/users/** restricted to ADMIN via @PreAuthorize
                 .requestMatchers("/api/auth/me").authenticated()
                 .requestMatchers("/api/auth/users/**").hasRole("ADMIN")
 
                 // ── Tickets: TECHNICIAN and ADMIN can update status ───
-                // Regular users can create/view tickets
-                // PATCH (status update) restricted to ADMIN + TECHNICIAN
                 .requestMatchers(HttpMethod.PATCH, "/api/tickets/**")
                     .hasAnyRole("ADMIN", "TECHNICIAN")
                 .requestMatchers("/api/tickets/**").authenticated()
 
                 // ── Notifications: all authenticated; SEND restricted ─
-                // POST /api/notifications/send → ADMIN + TECHNICIAN (enforced by @PreAuthorize)
                 .requestMatchers("/api/notifications/**").authenticated()
 
                 // ── Bookings: all authenticated ───────────────────────
-                // Admin-only actions (approve/reject) enforced in @PreAuthorize + service
                 .requestMatchers("/api/bookings/**").authenticated()
 
                 // ── Catch-all: require authentication for anything else ─
@@ -169,20 +186,8 @@ public class SecurityConfig {
     /**
      * CORS Configuration Source.
      *
-     * Centralizes CORS policy for the entire application.
-     * Applied to all /api/** routes.
-     *
-     * Key settings:
-     *  - allowedOrigins: configured in application.properties (comma-separated)
-     *  - allowedMethods: includes OPTIONS for preflight requests
-     *  - allowedHeaders: includes Authorization (for JWT) and Content-Type
-     *  - allowCredentials: true (required for cookies in OAuth flows)
-     *  - exposedHeaders: Authorization (allows frontend to read the token header)
-     *
-     * WHY NO @CrossOrigin on controllers?
-     *  Mixing @CrossOrigin with this centralized CorsConfigurationSource
-     *  causes conflicts — one overrides the other, leading to inconsistent
-     *  preflight handling and 403 errors. All CORS is managed here only.
+     * Covers all paths including OAuth2 redirect paths so that preflight
+     * requests to /oauth2/** and /login/oauth2/** don't get rejected.
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -194,7 +199,7 @@ public class SecurityConfig {
         // All standard HTTP methods + OPTIONS for preflight
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
-        // Allow Authorization header (JWT), Content-Type, and common request headers
+        // Allow all headers including Authorization (JWT) and Content-Type
         config.setAllowedHeaders(List.of("*"));
 
         // Expose Authorization header so frontend can read token from response headers
@@ -207,11 +212,10 @@ public class SecurityConfig {
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", config);
+        // Apply CORS to all paths — includes /api/**, /oauth2/**, /login/oauth2/**
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
-
-
 
     /**
      * DaoAuthenticationProvider Bean.
@@ -235,8 +239,6 @@ public class SecurityConfig {
      *
      * Exposes Spring Security's AuthenticationManager as a Spring Bean
      * so it can be injected into service classes if needed.
-     * Not currently injected (AuthServiceImpl validates credentials manually),
-     * but kept for conventional completeness and future use.
      */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {

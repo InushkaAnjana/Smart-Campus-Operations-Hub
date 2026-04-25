@@ -10,6 +10,7 @@ import {
   MdNotifications,
   MdLogout,
   MdSchool,
+  MdPeople,
 } from 'react-icons/md'
 import { useAuth } from '../../context/AuthContext'
 
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
   { label: 'Bookings',      path: '/bookings',      icon: MdEventNote,     description: 'Manage reservations' },
   { label: 'Tickets',       path: '/tickets',       icon: MdBuild,         description: 'Maintenance issues' },
   { label: 'Notifications', path: '/notifications', icon: MdNotifications, description: 'Alerts & updates' },
+  { label: 'Users',         path: '/users',         icon: MdPeople,        description: 'User management', adminOnly: true },
 ]
 
 const Sidebar = () => {
@@ -58,7 +60,7 @@ const Sidebar = () => {
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         <p className="px-3 mb-2 text-xs font-semibold text-indigo-500 uppercase tracking-widest">Main Menu</p>
         <ul className="space-y-1">
-          {NAV_ITEMS.map(({ label, path, icon: Icon, description }) => (
+          {NAV_ITEMS.filter(item => !item.adminOnly || isAdmin).map(({ label, path, icon: Icon, description }) => (
             <li key={path}>
               <NavLink
                 to={path}

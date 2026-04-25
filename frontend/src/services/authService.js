@@ -61,4 +61,19 @@ export const authService = {
   isAuthenticated: () => {
     return !!localStorage.getItem('token')
   },
+
+  /**
+   * ADMIN ONLY: Fetch all registered users
+   */
+  getAllUsers: async () => {
+    const response = await api.get(`${AUTH_BASE}/users`)
+    return response.data
+  },
+
+  /**
+   * ADMIN ONLY: Delete a user by ID
+   */
+  deleteUser: async (id) => {
+    await api.delete(`${AUTH_BASE}/users/${id}`)
+  },
 }

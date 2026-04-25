@@ -12,6 +12,7 @@ const PAGE_TITLES = {
   '/bookings':      'Booking Management',
   '/tickets':       'Maintenance Tickets',
   '/notifications': 'Notifications',
+  '/users':         'User Management',
 }
 
 const MainLayout = () => {

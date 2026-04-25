@@ -175,7 +175,7 @@ const LoginPage = () => {
 
           <button
             type="button"
-            onClick={() => window.location.href = "http://localhost:9090/oauth2/authorization/google"}
+            onClick={() => window.location.href = "/oauth2/authorization/google"}
             className="mt-4 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white py-2.5 px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
