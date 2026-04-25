@@ -77,8 +77,8 @@ public class AuthServiceImpl implements AuthService {
             throw AuthException.invalidCredentials();
         }
 
-        // Step 3: Generate JWT embedding email (subject) and role (claim)
-        String token = jwtUtils.generateToken(user.getEmail(), user.getRole());
+        // Step 3: Generate JWT embedding userId, email, name, and role
+        String token = jwtUtils.generateToken(user.getId(), user.getEmail(), user.getName(), user.getRole());
         log.info("Login successful for userId={} role={}", user.getId(), user.getRole());
 
         return new AuthDTO.AuthResponse(
@@ -129,7 +129,7 @@ public class AuthServiceImpl implements AuthService {
         log.info("User registered: id={} role={}", user.getId(), user.getRole());
 
         // Step 4: Generate JWT and return
-        String token = jwtUtils.generateToken(user.getEmail(), user.getRole());
+        String token = jwtUtils.generateToken(user.getId(), user.getEmail(), user.getName(), user.getRole());
 
         return new AuthDTO.AuthResponse(
                 token,
@@ -198,7 +198,7 @@ public class AuthServiceImpl implements AuthService {
                     return userRepository.save(newUser);
                 });
 
-        String token = jwtUtils.generateToken(oauthUser.getEmail(), oauthUser.getRole());
+        String token = jwtUtils.generateToken(oauthUser.getId(), oauthUser.getEmail(), oauthUser.getName(), oauthUser.getRole());
 
         return new AuthDTO.AuthResponse(
                 token,

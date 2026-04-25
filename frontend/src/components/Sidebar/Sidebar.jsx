@@ -2,17 +2,9 @@
  * Sidebar.jsx - Main Navigation Sidebar (Modern Tailwind UI)
  */
 import { NavLink, useNavigate } from 'react-router-dom'
-import {
-  MdDashboard,
-  MdMeetingRoom,
-  MdEventNote,
-  MdBuild,
-  MdNotifications,
-  MdLogout,
-  MdSchool,
-  MdPeople,
-} from 'react-icons/md'
+import { MdDashboard, MdMeetingRoom, MdEventNote, MdBuild, MdNotifications, MdLogout, MdSchool, MdPeople } from 'react-icons/md'
 import { useAuth } from '../../context/AuthContext'
+import { getDisplayName, getAvatarInitial } from '../../utils/userUtils'
 
 const NAV_ITEMS = [
   { label: 'Dashboard',     path: '/dashboard',     icon: MdDashboard,     description: 'Overview & stats' },
@@ -48,10 +40,10 @@ const Sidebar = () => {
       {/* ── User Info ── */}
       <div className="flex items-center gap-3 px-5 py-4 mx-3 mt-4 rounded-xl bg-indigo-800/30 border border-indigo-700/30">
         <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 text-white font-bold text-sm shadow-md shrink-0">
-          {user?.name?.[0]?.toUpperCase() || 'U'}
+          {getAvatarInitial(user)}
         </div>
         <div className="flex flex-col min-w-0">
-          <span className="text-sm font-semibold text-white truncate">{user?.name || 'Guest'}</span>
+          <span className="text-sm font-semibold text-white truncate">{getDisplayName(user)}</span>
           <span className="text-xs text-indigo-400 uppercase tracking-widest">{user?.role || 'USER'}</span>
         </div>
       </div>
