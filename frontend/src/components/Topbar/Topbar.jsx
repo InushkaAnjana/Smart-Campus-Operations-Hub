@@ -4,6 +4,7 @@
 import { MdNotifications, MdMenu, MdSearch } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { getDisplayName, getAvatarInitial } from '../../utils/userUtils'
 
 import NotificationBell from './NotificationBell'
 
@@ -43,10 +44,10 @@ const Topbar = ({ onMenuToggle, pageTitle }) => {
         {/* Avatar */}
         <div className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-100 cursor-default transition-colors">
           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-sm font-bold shadow">
-            {user?.name?.[0]?.toUpperCase() || 'U'}
+            {getAvatarInitial(user)}
           </div>
           <span className="hidden sm:block text-sm font-medium text-slate-700 max-w-[120px] truncate">
-            {user?.name || 'Guest'}
+            {getDisplayName(user)}
           </span>
         </div>
       </div>

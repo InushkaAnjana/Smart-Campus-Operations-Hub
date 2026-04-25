@@ -25,35 +25,42 @@ const OAuthCallback = () => {
 
     if (error) {
       console.error('OAuth login failed:', error)
-      navigate('/login', { replace: true })
+      // Redirect to login with the specific error code for the UI to display
+      navigate(`/login?error=${error}`, { replace: true })
       return
     }
 
     if (token) {
       try {
-        // Decode JWT payload (base64url string between the first and second dots)
+        // ── Decode JWT payload ────────────────────────────────────────────────
         const payloadBase64 = token.split('.')[1]
-        // atob expects standard base64; JWT uses base64url (replace - and _)
         const standardBase64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/')
         const decodedPayload = JSON.parse(atob(standardBase64))
 
+        // Build user object from JWT claims
+        // sub = email, userId = id, name = display name
         const userData = {
-          userId: decodedPayload.userId || decodedPayload.sub,
+          id: decodedPayload.userId,
+          userId: decodedPayload.userId, // for backward compatibility
           email: decodedPayload.sub,
           role: decodedPayload.role || 'USER',
-          name: decodedPayload.name || 'Google User',
+          name: decodedPayload.name || 'User',
         }
 
-        // Persist token and user via the AuthContext helper
-        // (this also updates the in-memory React state so ProtectedRoute works)
+        // Clear any old session data and save the new user
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+
+        // loginWithToken updates both localStorage and React Auth state
         loginWithToken(token, userData)
+        
         navigate('/dashboard', { replace: true })
       } catch (e) {
         console.error('Failed to parse OAuth token:', e)
-        navigate('/login', { replace: true })
+        navigate('/login?error=invalid_token', { replace: true })
       }
     } else {
-      navigate('/login', { replace: true })
+      navigate('/login?error=token_missing', { replace: true })
     }
   }, [searchParams, navigate, loginWithToken])
 

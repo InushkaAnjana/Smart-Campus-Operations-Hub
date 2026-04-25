@@ -1,8 +1,8 @@
 /**
  * LoginPage.jsx - User Authentication Page (Modern Tailwind UI)
  */
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { MdSchool, MdEmail, MdLock, MdVisibility, MdVisibilityOff, MdCheckCircle } from 'react-icons/md'
 import { useAuth } from '../../context/AuthContext'
 import campusBg from '../../assets/smart_campus_bg.png'
@@ -17,10 +17,32 @@ const FEATURES = [
 const LoginPage = () => {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  
   const [form, setForm]         = useState({ email: '', password: '' })
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
+
+  // ── Handle OAuth Redirect Errors ──
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const errorParam = params.get('error')
+
+    if (errorParam) {
+      const errorMessages = {
+        missing_email: 'Google did not provide an email address. Please try again.',
+        email_not_verified: 'Your Google email is not verified. Please verify it first.',
+        invalid_domain: 'Access restricted to authorized university emails only.',
+        token_missing: 'Authentication failed: Security token missing.',
+        invalid_token: 'Authentication failed: The session is invalid or expired.',
+      }
+      setError(errorMessages[errorParam] || 'An error occurred during Google sign-in.')
+      
+      // Clean URL after reading the error
+      navigate('/login', { replace: true })
+    }
+  }, [location, navigate])
 
   const handleChange = e =>
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))

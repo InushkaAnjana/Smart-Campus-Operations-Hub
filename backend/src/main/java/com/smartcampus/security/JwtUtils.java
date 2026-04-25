@@ -66,22 +66,22 @@ public class JwtUtils {
     }
 
     /**
-     * Generates a signed JWT token for the given email and role.
+     * Generates a signed JWT token for the given user data.
      *
      * Claims included:
-     *   sub  = email        (standard claim; used as the unique user identifier)
-     *   role = role string  (custom claim; e.g. "ADMIN", "USER", "TECHNICIAN")
-     *   iat  = now          (issued at)
-     *   exp  = now + expiration-ms
-     *
-     * @param email The user's email address (stored as JWT subject)
-     * @param role  The user's role string (e.g. "ADMIN")
-     * @return Signed, compact JWT string
+     *   sub    = email        (standard claim; used as the unique user identifier)
+     *   userId = MongoDB ID   (custom claim)
+     *   name   = Display name (custom claim)
+     *   role   = role string  (custom claim; e.g. "ADMIN", "USER", "TECHNICIAN")
+     *   iat    = now          (issued at)
+     *   exp    = now + expiration-ms
      */
-    public String generateToken(String email, String role) {
+    public String generateToken(String userId, String email, String name, String role) {
         return Jwts.builder()
                 .setSubject(email)
-                .claim("role", role)          // Embed role so filter can read it without a DB call
+                .claim("userId", userId)
+                .claim("name", name)
+                .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -89,38 +89,40 @@ public class JwtUtils {
     }
 
     /**
-     * Overloaded variant kept for backwards-compatibility with code that calls
-     * generateToken(email) without a role. Embeds an empty role claim.
-     *
-     * @deprecated Prefer {@link #generateToken(String, String)} to embed the role claim.
+     * Legacy method preserved for compatibility with existing service calls.
+     * @deprecated Use {@link #generateToken(String, String, String, String)}
      */
     @Deprecated
-    public String generateToken(String email) {
-        return generateToken(email, "");
+    public String generateToken(String email, String role) {
+        return generateToken(null, email, "User", role);
     }
 
     /**
-     * Extracts the subject (user email) from a validated JWT token.
-     *
-     * @param token The compact JWT string (without "Bearer " prefix)
-     * @return The email stored as the JWT subject
-     * @throws JwtException if the token cannot be parsed
+     * Extracts the 'userId' custom claim from a validated JWT token.
      */
-    public String getUsernameFromToken(String token) {
+    public String getUserIdFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
-                .getSubject();
+                .get("userId", String.class);
+    }
+
+    /**
+     * Extracts the 'name' custom claim from a validated JWT token.
+     */
+    public String getNameFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("name", String.class);
     }
 
     /**
      * Extracts the 'role' custom claim from a validated JWT token.
-     * Used by JwtAuthFilter to rebuild the GrantedAuthority without a DB call.
-     *
-     * @param token The compact JWT string
-     * @return The role string (e.g. "ADMIN"), or null if absent
      */
     public String getRoleFromToken(String token) {
         Claims claims = Jwts.parserBuilder()

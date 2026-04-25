@@ -10,6 +10,14 @@ const FEATURES = [
   'Resource Management',
 ]
 
+// Helper component for password requirements
+const Requirement = ({ met, text }) => (
+  <div className={`flex items-center gap-1.5 text-[10px] transition-colors ${met ? 'text-emerald-600' : 'text-slate-400'}`}>
+    <MdCheckCircle className={`text-sm ${met ? 'text-emerald-500' : 'text-slate-200'}`} />
+    <span className={met ? 'font-medium' : ''}>{text}</span>
+  </div>
+)
+
 const RegisterPage = () => {
   const { register } = useAuth()
   const navigate = useNavigate()
@@ -18,23 +26,63 @@ const RegisterPage = () => {
     name: '',
     email: '',
     password: '',
-    role: 'USER', // Default role
+    role: 'USER',
   })
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleChange = (e) =>
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  // ── Validation State ──
+  const [validation, setValidation] = useState({
+    emailValid: true,
+    passLength: false,
+    passUpper: false,
+    passLower: false,
+    passNumber: false,
+    passSpecial: false,
+  })
+
+  const validateEmail = (email) => {
+    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    return re.test(String(email).toLowerCase())
+  }
+
+  const validatePassword = (pass) => {
+    return {
+      passLength: pass.length >= 8,
+      passUpper: /[A-Z]/.test(pass),
+      passLower: /[a-z]/.test(pass),
+      passNumber: /\d/.test(pass),
+      passSpecial: /[!@#$%^&*]/.test(pass),
+    }
+  }
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setForm((prev) => ({ ...prev, [name]: value }))
+
+    if (name === 'email') {
+      setValidation(prev => ({ ...prev, emailValid: validateEmail(value) || value === '' }))
+    }
+    if (name === 'password') {
+      const passVal = validatePassword(value)
+      setValidation(prev => ({ ...prev, ...passVal }))
+    }
+  }
+
+  const isFormValid = 
+    form.name.trim() !== '' && 
+    validateEmail(form.email) && 
+    Object.values(validatePassword(form.password)).every(Boolean)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!isFormValid) return
     setError('')
     setLoading(true)
 
     try {
       await register(form.name, form.email, form.password, form.role)
-      // Redirect after successful registration/login
       navigate('/dashboard')
     } catch (err) {
       setError(err?.message || 'Failed to register. Please check your details.')
@@ -137,9 +185,12 @@ const RegisterPage = () => {
                   onChange={handleChange}
                   placeholder="you@university.edu"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 rounded-xl bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className={`w-full pl-10 pr-4 py-2.5 text-sm border rounded-xl bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${!validation.emailValid ? 'border-red-500 focus:ring-red-500' : 'border-slate-300'}`}
                 />
               </div>
+              {!validation.emailValid && form.email !== '' && (
+                <p className="text-xs text-red-500 mt-1">Please enter a valid email address.</p>
+              )}
             </div>
 
             {/* Password */}
@@ -158,7 +209,7 @@ const RegisterPage = () => {
                   placeholder="Create a password"
                   required
                   minLength={6}
-                  className="w-full pl-10 pr-12 py-2.5 text-sm border border-slate-300 rounded-xl bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className={`w-full pl-10 pr-12 py-2.5 text-sm border rounded-xl bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${form.password !== '' && !Object.values(validatePassword(form.password)).every(Boolean) ? 'border-red-500 focus:ring-red-500' : 'border-slate-300'}`}
                 />
                 <button
                   type="button"
@@ -169,7 +220,18 @@ const RegisterPage = () => {
                   {showPass ? <MdVisibilityOff /> : <MdVisibility />}
                 </button>
               </div>
-              <p className="text-xs text-slate-400 mt-1.5">Must be at least 6 characters.</p>
+              
+              {/* Password Requirements List */}
+              <div className="mt-2 space-y-1">
+                <p className="text-xs font-semibold text-slate-500 mb-1">Password Requirements:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-1">
+                  <Requirement met={validation.passLength} text="Min 8 characters" />
+                  <Requirement met={validation.passUpper} text="Uppercase letter" />
+                  <Requirement met={validation.passLower} text="Lowercase letter" />
+                  <Requirement met={validation.passNumber} text="One number" />
+                  <Requirement met={validation.passSpecial} text="Special char (!@#$%^&*)" />
+                </div>
+              </div>
             </div>
 
             {/* Role Validation (Optional Dropdown) */}
@@ -193,8 +255,8 @@ const RegisterPage = () => {
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-200 mt-2"
+              disabled={loading || !isFormValid}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-200 mt-2"
             >
               {loading ? (
                 <>
