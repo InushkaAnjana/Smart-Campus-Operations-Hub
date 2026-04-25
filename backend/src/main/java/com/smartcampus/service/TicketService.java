@@ -2,6 +2,7 @@ package com.smartcampus.service;
 
 import com.smartcampus.dto.CommentDTO;
 import com.smartcampus.dto.TicketRequestDTO;
+import com.smartcampus.dto.TicketUpdateDTO;
 import com.smartcampus.dto.TicketResponseDTO;
 import com.smartcampus.model.Priority;
 import com.smartcampus.model.TicketStatus;
@@ -23,6 +24,8 @@ public interface TicketService {
     TicketResponseDTO getTicketById(String id);
     
     TicketResponseDTO updateTicketStatus(String id, TicketStatus newStatus, String rejectionReason, String currentUserId);
+
+    TicketResponseDTO updateTicket(String id, TicketUpdateDTO updateDTO);
     
     TicketResponseDTO assignTechnician(String id, String technicianId);
     

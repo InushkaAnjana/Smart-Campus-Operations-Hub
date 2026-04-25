@@ -3,7 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import { ticketService } from '../../services/ticketService';
 import TicketForm from '../../components/Tickets/TicketForm';
 import TicketTable from '../../components/Tickets/TicketTable';
-import { FiPlus, FiList } from 'react-icons/fi';
+import { FiPlus, FiList, FiArrowLeft } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 /**
@@ -35,19 +36,27 @@ const MyTickets = () => {
     <div className="space-y-8 pb-12">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+        <div className="flex flex-col gap-2">
+          {/* Back to list button */}
+          <Link
+            to="/tickets"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-400 hover:text-blue-600 transition-colors w-fit"
+          >
+            <FiArrowLeft size={15} />
+            Back to list
+          </Link>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">Support Requests</h1>
           <p className="text-gray-500">Report maintenance issues or track your raised tickets.</p>
         </div>
-        
+
         <div className="flex p-1 bg-gray-100 rounded-xl">
-          <button 
+          <button
             onClick={() => setView('list')}
             className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${view === 'list' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}
           >
             <FiList /> My History
           </button>
-          <button 
+          <button
             onClick={() => setView('create')}
             className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${view === 'create' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}
           >
