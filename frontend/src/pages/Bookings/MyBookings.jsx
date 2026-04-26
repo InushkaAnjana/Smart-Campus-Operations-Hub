@@ -16,7 +16,7 @@ import { bookingService } from '../../services/bookingService'
 import BookingTable from '../../components/Bookings/BookingTable'
 import StatusBadge from '../../components/Bookings/StatusBadge'
 
-const STATUS_TABS = ['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED']
+const STATUS_TABS = ['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED']
 
 const MyBookings = () => {
   const [bookings, setBookings]   = useState([])
