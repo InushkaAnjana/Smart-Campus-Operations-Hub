@@ -6,73 +6,6 @@
 
 ---
 
-## 👥 Team Ownership Map
-
-| Member | Role | Module |
-|--------|------|--------|
-| **Member 1** (Team Lead) | Auth, Security, CI/CD | Auth endpoints, JWT, routing |
-| **Member 2** | Booking Management | `/api/bookings` + Bookings page |
-| **Member 3** | Facilities & Resources | `/api/resources` + Resources page |
-| **Member 4** | Maintenance & Notifications | `/api/tickets` + `/api/notifications` |
-
----
-
-## 📁 Project Structure
-
-```
-Smart-Campus-Operations-Hub/
-├── backend/                        ← Spring Boot REST API
-│   ├── pom.xml
-│   └── src/main/java/com/smartcampus/
-│       ├── SmartCampusApplication.java
-│       ├── config/                 ← AppConfig (ModelMapper, etc.)
-│       ├── controller/             ← REST Controllers
-│       │   ├── AuthController.java
-│       │   ├── ResourceController.java
-│       │   ├── BookingController.java
-│       │   ├── TicketController.java
-│       │   └── NotificationController.java
-│       ├── service/                ← Service interfaces
-│       │   └── impl/               ← Service implementations
-│       ├── repository/             ← JPA Repositories
-│       ├── model/                  ← JPA Entities
-│       ├── dto/                    ← Request/Response DTOs
-│       ├── security/               ← JWT, SecurityConfig, Filter
-│       └── exception/              ← Custom exceptions + Global Handler
-│
-└── frontend/                       ← React + Vite SPA
-    ├── index.html
-    ├── vite.config.js
-    ├── package.json
-    └── src/
-        ├── App.jsx                 ← Router root
-        ├── main.jsx                ← React entry point
-        ├── index.css               ← Global design system
-        ├── context/
-        │   └── AuthContext.jsx     ← Auth state (user, token, roles)
-        ├── hooks/
-        │   ├── useApi.js           ← Generic fetch hook
-        │   └── useNotifications.js ← Notifications hook
-        ├── services/               ← Axios API calls
-        │   ├── axiosConfig.js      ← Axios instance + interceptors
-        │   ├── authService.js
-        │   ├── resourceService.js
-        │   ├── bookingService.js
-        │   ├── ticketService.js
-        │   └── notificationService.js
-        ├── components/
-        │   ├── Sidebar/            ← Navigation sidebar
-        │   ├── Topbar/             ← Top navigation bar
-        │   ├── MainLayout/         ← Authenticated app shell
-        │   └── ProtectedRoute/     ← Auth route guard
-        └── pages/
-            ├── Login/              ← Member 1
-            ├── Dashboard/          ← Member 1
-            ├── Resources/          ← Member 3
-            ├── Bookings/           ← Member 2
-            ├── Tickets/            ← Member 4
-            └── Notifications/      ← Member 4
-```
 
 ---
 
@@ -157,7 +90,7 @@ npm run dev
 | PUT | `/api/tickets/{id}` | Update ticket |
 | DELETE | `/api/tickets/{id}` | Close ticket |
 
-### Notifications — Member 4
+### Notifications — Member 1
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/notifications/user/{userId}` | User's notifications |
@@ -194,17 +127,6 @@ npm run dev
 
 ---
 
-## 📦 Production Switch (MySQL)
-
-In `backend/src/main/resources/application.properties`:
-
-```properties
-# Comment H2 block, uncomment MySQL block:
-spring.datasource.url=jdbc:mysql://localhost:3306/smart_campus_db
-spring.datasource.username=root
-spring.datasource.password=yourpassword
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
-```
 
 ---
 
